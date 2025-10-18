@@ -151,12 +151,23 @@ app.delete('/api/gorevler/:id', async (req, res) => {
   }
 });
 
+// Healthcheck endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    database: useSupabase ? 'Supabase' : 'SQLite',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Ana sayfa
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server ${PORT} portunda çalışıyor`);
-  console.log(`Uygulamaya erişim: http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server ${PORT} portunda çalışıyor`);
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`💾 Database: ${useSupabase ? 'Supabase (PostgreSQL)' : 'SQLite'}`);
+  console.log(`✅ Server başarıyla başlatıldı`);
 });

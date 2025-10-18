@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personel Takip Sistemi</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-users"></i> Personel Takip Sistemi</h1>
+            <p>Giyim Mağazası Yönetim Paneli</p>
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('personel')">
+                <i class="fas fa-user-friends"></i> Personel Listesi
+            </button>
+            <button class="tab-btn" onclick="showTab('detay')" id="detay-tab-btn" style="display: none;">
+                <i class="fas fa-user"></i> Personel Detayı
+            </button>
+        </nav>
+
+        <!-- Personel Sekmesi -->
+        <div id="personel-tab" class="tab-content active">
+            <div class="section-header">
+                <h2>Personel Listesi</h2>
+                <button class="btn btn-primary" onclick="showPersonelForm()">
+                    <i class="fas fa-plus"></i> Yeni Personel
+                </button>
+            </div>
+            
+            <div id="personel-form" class="form-container" style="display: none;">
+                <h3>Yeni Personel Ekle</h3>
+                <form onsubmit="addPersonel(event)">
+                    <div class="form-row">
+                        <input type="text" id="ad" placeholder="Ad" required>
+                        <input type="text" id="soyad" placeholder="Soyad" required>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="pozisyon" placeholder="Pozisyon" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Kaydet</button>
+                        <button type="button" class="btn btn-secondary" onclick="hidePersonelForm()">İptal</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="personel-list" class="personel-grid"></div>
+        </div>
+
+        <!-- Personel Detay Sekmesi -->
+        <div id="detay-tab" class="tab-content">
+            <div class="section-header">
+                <h2 id="personel-detay-baslik">Personel Detayı</h2>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="showNoteForm()">
+                        <i class="fas fa-plus"></i> Not Ekle
+                    </button>
+                    <button class="btn btn-secondary" onclick="showTaskForm()">
+                        <i class="fas fa-tasks"></i> Görev Ata
+                    </button>
+                </div>
+            </div>
+
+            <!-- Not Ekleme Formu -->
+            <div id="note-form" class="form-container" style="display: none;">
+                <h3>Yeni Not Ekle</h3>
+                <div class="voice-controls">
+                    <button id="voice-btn" class="btn btn-voice" onclick="toggleVoiceRecording()">
+                        <i class="fas fa-microphone"></i> <span id="voice-btn-text">Sesli Not</span>
+                    </button>
+                    <span id="voice-status"></span>
+                </div>
+                <textarea id="not-metni" placeholder="Not yazın veya sesli not için mikrofon butonuna basın..." rows="4" required></textarea>
+                <div class="note-type-buttons">
+                    <button type="button" class="btn btn-success" onclick="addNoteWithType('olumlu')">
+                        <i class="fas fa-thumbs-up"></i> Olumlu Not Ekle
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="addNoteWithType('olumsuz')">
+                        <i class="fas fa-thumbs-down"></i> Olumsuz Not Ekle
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="hideNoteForm()">İptal</button>
+                </div>
+            </div>
+
+            <!-- Görev Ekleme Formu -->
+            <div id="task-form" class="form-container" style="display: none;">
+                <h3>Yeni Görev Ata</h3>
+                <form onsubmit="addTask(event)">
+                    <input type="text" id="gorev-baslik" placeholder="Görev Başlığı" required>
+                    <textarea id="gorev-aciklama" placeholder="Görev Açıklaması" rows="3"></textarea>
+                    <input type="date" id="bitis-tarihi" placeholder="Bitiş Tarihi">
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">Görev Ata</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideTaskForm()">İptal</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Notlar ve Görevler Listesi -->
+            <div id="activities-list"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

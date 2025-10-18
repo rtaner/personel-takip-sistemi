@@ -1,8 +1,9 @@
+require('dotenv').config();
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const { dbOperations, useSupabase } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,163 +13,142 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// Veritabanı bağlantısı
-const dbPath = process.env.DB_PATH || 'personel_takip.db';
-const db = new sqlite3.Database(dbPath);
-
-// Veritabanı tablolarını oluştur
-db.serialize(() => {
-  // Personel tablosu
-  db.run(`CREATE TABLE IF NOT EXISTS personel (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ad TEXT NOT NULL,
-    soyad TEXT NOT NULL,
-    pozisyon TEXT,
-    telefon TEXT,
-    email TEXT,
-    baslangic_tarihi DATE,
-    aktif BOOLEAN DEFAULT 1,
-    olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // Notlar tablosu
-  db.run(`CREATE TABLE IF NOT EXISTS notlar (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    personel_id INTEGER,
-    not_metni TEXT NOT NULL,
-    tarih DATETIME DEFAULT CURRENT_TIMESTAMP,
-    kategori TEXT DEFAULT 'genel',
-    FOREIGN KEY (personel_id) REFERENCES personel (id)
-  )`);
-
-  // Görevler tablosu
-  db.run(`CREATE TABLE IF NOT EXISTS gorevler (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    personel_id INTEGER,
-    gorev_baslik TEXT NOT NULL,
-    gorev_aciklama TEXT,
-    atanma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
-    bitis_tarihi DATE,
-    durum TEXT DEFAULT 'beklemede',
-    performans_puani INTEGER,
-    FOREIGN KEY (personel_id) REFERENCES personel (id)
-  )`);
-});
+console.log(`🗄️ Veritabanı: ${useSupabase ? 'Supabase (PostgreSQL)' : 'SQLite'}`);
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔗 Supabase URL: ${process.env.SUPABASE_URL ? 'Configured ✅' : 'Not configured ❌'}`);
 
 // API Routes
 
 // Tüm personeli getir
-app.get('/api/personel', (req, res) => {
-  db.all('SELECT * FROM personel WHERE aktif = 1 ORDER BY ad, soyad', (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json(rows);
-  });
+app.get('/api/personel', async (req, res) => {
+  try {
+    const personel = await dbOperations.getPersonel();
+    res.json(personel);
+  } catch (error) {
+    console.error('Personel getirme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Yeni personel ekle
-app.post('/api/personel', (req, res) => {
-  const { ad, soyad, pozisyon, telefon, email, baslangic_tarihi } = req.body;
-  
-  db.run(
-    'INSERT INTO personel (ad, soyad, pozisyon, telefon, email, baslangic_tarihi) VALUES (?, ?, ?, ?, ?, ?)',
-    [ad, soyad, pozisyon, telefon, email, baslangic_tarihi],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json({ id: this.lastID, message: 'Personel başarıyla eklendi' });
-    }
-  );
+app.post('/api/personel', async (req, res) => {
+  try {
+    const result = await dbOperations.addPersonel(req.body);
+    res.json({ id: result.id, message: 'Personel başarıyla eklendi' });
+  } catch (error) {
+    console.error('Personel ekleme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Personel güncelleme
+app.put('/api/personel/:id', async (req, res) => {
+  try {
+    await dbOperations.updatePersonel(req.params.id, req.body);
+    res.json({ message: 'Personel başarıyla güncellendi' });
+  } catch (error) {
+    console.error('Personel güncelleme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Personel silme
+app.delete('/api/personel/:id', async (req, res) => {
+  try {
+    await dbOperations.deletePersonel(req.params.id);
+    res.json({ message: 'Personel başarıyla silindi' });
+  } catch (error) {
+    console.error('Personel silme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Personel notlarını getir
-app.get('/api/personel/:id/notlar', (req, res) => {
-  const personelId = req.params.id;
-  
-  db.all(
-    'SELECT * FROM notlar WHERE personel_id = ? ORDER BY tarih DESC',
-    [personelId],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json(rows);
-    }
-  );
+app.get('/api/personel/:id/notlar', async (req, res) => {
+  try {
+    const notlar = await dbOperations.getPersonelNotes(req.params.id);
+    res.json(notlar);
+  } catch (error) {
+    console.error('Notlar getirme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Yeni not ekle
-app.post('/api/notlar', (req, res) => {
-  const { personel_id, not_metni, kategori } = req.body;
-  
-  db.run(
-    'INSERT INTO notlar (personel_id, not_metni, kategori) VALUES (?, ?, ?)',
-    [personel_id, not_metni, kategori || 'genel'],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json({ id: this.lastID, message: 'Not başarıyla eklendi' });
-    }
-  );
+app.post('/api/notlar', async (req, res) => {
+  try {
+    const result = await dbOperations.addNote(req.body);
+    res.json({ id: result.id, message: 'Not başarıyla eklendi' });
+  } catch (error) {
+    console.error('Not ekleme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Not güncelleme
+app.put('/api/notlar/:id', async (req, res) => {
+  try {
+    await dbOperations.updateNote(req.params.id, req.body);
+    res.json({ message: 'Not başarıyla güncellendi' });
+  } catch (error) {
+    console.error('Not güncelleme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Not silme
+app.delete('/api/notlar/:id', async (req, res) => {
+  try {
+    await dbOperations.deleteNote(req.params.id);
+    res.json({ message: 'Not başarıyla silindi' });
+  } catch (error) {
+    console.error('Not silme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Personel görevlerini getir
-app.get('/api/personel/:id/gorevler', (req, res) => {
-  const personelId = req.params.id;
-  
-  db.all(
-    'SELECT * FROM gorevler WHERE personel_id = ? ORDER BY atanma_tarihi DESC',
-    [personelId],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json(rows);
-    }
-  );
+app.get('/api/personel/:id/gorevler', async (req, res) => {
+  try {
+    const gorevler = await dbOperations.getPersonelTasks(req.params.id);
+    res.json(gorevler);
+  } catch (error) {
+    console.error('Görevler getirme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Yeni görev ekle
-app.post('/api/gorevler', (req, res) => {
-  const { personel_id, gorev_baslik, gorev_aciklama, bitis_tarihi } = req.body;
-  
-  db.run(
-    'INSERT INTO gorevler (personel_id, gorev_baslik, gorev_aciklama, bitis_tarihi) VALUES (?, ?, ?, ?)',
-    [personel_id, gorev_baslik, gorev_aciklama, bitis_tarihi],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json({ id: this.lastID, message: 'Görev başarıyla eklendi' });
-    }
-  );
+app.post('/api/gorevler', async (req, res) => {
+  try {
+    const result = await dbOperations.addTask(req.body);
+    res.json({ id: result.id, message: 'Görev başarıyla eklendi' });
+  } catch (error) {
+    console.error('Görev ekleme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Görev durumunu güncelle
-app.put('/api/gorevler/:id', (req, res) => {
-  const gorevId = req.params.id;
-  const { durum, performans_puani } = req.body;
-  
-  db.run(
-    'UPDATE gorevler SET durum = ?, performans_puani = ? WHERE id = ?',
-    [durum, performans_puani, gorevId],
-    function(err) {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json({ message: 'Görev başarıyla güncellendi' });
-    }
-  );
+app.put('/api/gorevler/:id', async (req, res) => {
+  try {
+    await dbOperations.updateTask(req.params.id, req.body);
+    res.json({ message: 'Görev başarıyla güncellendi' });
+  } catch (error) {
+    console.error('Görev güncelleme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Görev silme
+app.delete('/api/gorevler/:id', async (req, res) => {
+  try {
+    await dbOperations.deleteTask(req.params.id);
+    res.json({ message: 'Görev başarıyla silindi' });
+  } catch (error) {
+    console.error('Görev silme hatası:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Ana sayfa

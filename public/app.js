@@ -39,10 +39,24 @@ async function loadPersonel() {
         personel.forEach(p => {
             const card = document.createElement('div');
             card.className = 'personel-card';
-            card.onclick = () => showPersonelDetail(p.id, `${p.ad} ${p.soyad}`);
             card.innerHTML = `
-                <h3>${p.ad} ${p.soyad}</h3>
-                <span class="pozisyon">${p.pozisyon || 'Personel'}</span>
+                <div class="card-content" onclick="showPersonelDetail(${p.id}, '${p.ad} ${p.soyad}')">
+                    <h3>${p.ad} ${p.soyad}</h3>
+                    <span class="pozisyon">${p.pozisyon || 'Personel'}</span>
+                </div>
+                <div class="card-menu">
+                    <button class="menu-trigger" onclick="toggleCardMenu(event, ${p.id})">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="menu-dropdown" id="menu-${p.id}">
+                        <button class="menu-item edit" onclick="editPersonel(${p.id}, '${p.ad}', '${p.soyad}', '${p.pozisyon || ''}')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                        <button class="menu-item delete" onclick="deletePersonel(${p.id}, '${p.ad} ${p.soyad}')">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                    </div>
+                </div>
             `;
             container.appendChild(card);
         });
@@ -193,9 +207,22 @@ async function loadActivities(personelId) {
                 activityDiv.innerHTML = `
                     <div class="activity-header">
                         <span class="activity-type note">Not</span>
-                        <div>
+                        <div class="activity-actions">
                             <span class="note-type-badge note-type-${activity.noteType}">${activity.noteType === 'olumlu' ? 'Olumlu' : 'Olumsuz'}</span>
                             <span class="activity-date">${formatDateTime(activity.date)}</span>
+                            <div class="activity-menu">
+                                <button class="menu-trigger" onclick="toggleActivityMenu(event, 'note-${activity.id}')">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="menu-dropdown" id="menu-note-${activity.id}">
+                                    <button class="menu-item edit" onclick="editNote(${activity.id}, '${activity.content.replace(/'/g, "\\'")}', '${activity.noteType}')">
+                                        <i class="fas fa-edit"></i> Düzenle
+                                    </button>
+                                    <button class="menu-item delete" onclick="deleteNote(${activity.id})">
+                                        <i class="fas fa-trash"></i> Sil
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <p>${activity.content}</p>
@@ -214,25 +241,54 @@ async function loadActivities(personelId) {
                     activityDiv.innerHTML = `
                         <div class="activity-header">
                             <span class="activity-type task">Görev Tamamlandı</span>
-                            <div>
-                                <span class="performance-stars">${getStarRating(activity.performance)}</span>
+                            <div class="activity-actions">
                                 <span class="activity-date">${formatDateTime(activity.date)}</span>
+                                <div class="activity-menu">
+                                    <button class="menu-trigger" onclick="toggleActivityMenu(event, 'task-${activity.id}')">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="menu-dropdown" id="menu-task-${activity.id}">
+                                        <button class="menu-item edit" onclick="editTask(${activity.id}, '${activity.content.replace(/'/g, "\\'")}', '${activity.description ? activity.description.replace(/'/g, "\\'") : ''}', '${activity.endDate || ''}', ${activity.performance})">
+                                            <i class="fas fa-edit"></i> Düzenle
+                                        </button>
+                                        <button class="menu-item delete" onclick="deleteTask(${activity.id})">
+                                            <i class="fas fa-trash"></i> Sil
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <h4>${activity.content}</h4>
                         ${activity.description ? `<p>${activity.description}</p>` : ''}
                         ${activity.endDate ? `<p><strong>Bitiş Tarihi:</strong> ${formatDate(activity.endDate)}</p>` : ''}
-                        <div class="performance-note">
-                            <strong>Performans Değerlendirmesi:</strong> ${activity.performance}/5 ${activity.performance >= 3 ? '(Başarılı)' : '(Geliştirilmeli)'}
+                        <div class="performance-section">
+                            <div class="performance-stars-display">
+                                <span class="performance-label">Performans:</span>
+                                <span class="performance-stars">${getStarRating(activity.performance)}</span>
+                                <span class="performance-text">${activity.performance}/5 ${activity.performance >= 3 ? '(Başarılı)' : '(Geliştirilmeli)'}</span>
+                            </div>
                         </div>
                     `;
                 } else {
                     activityDiv.innerHTML = `
                         <div class="activity-header">
                             <span class="activity-type task">Görev</span>
-                            <div>
+                            <div class="activity-actions">
                                 <span class="task-status status-${activity.status.replace(' ', '-')}">${getStatusName(activity.status)}</span>
                                 <span class="activity-date">${formatDateTime(activity.date)}</span>
+                                <div class="activity-menu">
+                                    <button class="menu-trigger" onclick="toggleActivityMenu(event, 'task-${activity.id}')">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="menu-dropdown" id="menu-task-${activity.id}">
+                                        <button class="menu-item edit" onclick="editTask(${activity.id}, '${activity.content.replace(/'/g, "\\'")}', '${activity.description ? activity.description.replace(/'/g, "\\'") : ''}', '${activity.endDate || ''}', ${activity.performance || 0})">
+                                            <i class="fas fa-edit"></i> Düzenle
+                                        </button>
+                                        <button class="menu-item delete" onclick="deleteTask(${activity.id})">
+                                            <i class="fas fa-trash"></i> Sil
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <h4>${activity.content}</h4>
@@ -248,7 +304,9 @@ async function loadActivities(personelId) {
                             
                             ${activity.status === 'tamamlandi' ? `
                                 <div class="star-rating">
-                                    <span>Performans Değerlendirmesi:</span>
+                                    <div class="star-rating-row">
+                                        <span>Performans Değerlendirmesi:</span>
+                                    </div>
                                     <div class="stars">
                                         ${[1,2,3,4,5].map(i => `
                                             <span class="star ${activity.performance >= i ? 'filled' : ''}" 
@@ -678,3 +736,430 @@ function getStarRating(rating) {
     }
     return stars;
 }
+
+// Personel silme
+async function deletePersonel(personelId, personelName) {
+    if (!confirm(`"${personelName}" adlı personeli ve tüm kayıtlarını silmek istediğinizden emin misiniz?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/personel/${personelId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('Personel başarıyla silindi!');
+            loadPersonel();
+            // Eğer silinen personelin detay sayfasındaysak ana sayfaya dön
+            if (currentPersonelId == personelId) {
+                showTab('personel');
+                document.getElementById('detay-tab-btn').style.display = 'none';
+            }
+        } else {
+            alert('Hata: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Personel silinirken hata:', error);
+        alert('Bir hata oluştu!');
+    }
+}
+
+// Personel düzenleme
+function editPersonel(personelId, ad, soyad, pozisyon) {
+    const newAd = prompt('Ad:', ad);
+    if (newAd === null) return;
+    
+    const newSoyad = prompt('Soyad:', soyad);
+    if (newSoyad === null) return;
+    
+    const newPozisyon = prompt('Pozisyon:', pozisyon);
+    if (newPozisyon === null) return;
+    
+    updatePersonel(personelId, newAd.trim(), newSoyad.trim(), newPozisyon.trim());
+}
+
+// Personel güncelleme
+async function updatePersonel(personelId, ad, soyad, pozisyon) {
+    if (!ad || !soyad) {
+        alert('Ad ve soyad boş olamaz!');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/personel/${personelId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ad, soyad, pozisyon })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('Personel başarıyla güncellendi!');
+            loadPersonel();
+            // Eğer güncellenenen personelin detay sayfasındaysak başlığı güncelle
+            if (currentPersonelId == personelId) {
+                const newName = `${ad} ${soyad}`;
+                document.getElementById('personel-detay-baslik').textContent = newName + ' - Detaylar';
+                currentPersonelName = newName;
+            }
+        } else {
+            alert('Hata: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Personel güncellenirken hata:', error);
+        alert('Bir hata oluştu!');
+    }
+}
+
+// Not silme
+async function deleteNote(noteId) {
+    if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/notlar/${noteId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            loadActivities(currentPersonelId);
+        } else {
+            alert('Hata: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Not silinirken hata:', error);
+        alert('Bir hata oluştu!');
+    }
+}
+
+// Not düzenleme - Gelişmiş modal
+function editNote(noteId, content, noteType) {
+    showNoteEditModal(noteId, content, noteType);
+}
+
+// Not düzenleme modalını göster
+function showNoteEditModal(noteId, content, noteType) {
+    // Modal HTML'i oluştur
+    const modalHtml = `
+        <div id="note-edit-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>Not Düzenle</h3>
+                <textarea id="edit-note-text" rows="4" placeholder="Not içeriği...">${content}</textarea>
+                <div class="note-edit-buttons">
+                    <button class="btn btn-success" onclick="saveNoteEdit(${noteId}, 'olumlu')">
+                        <i class="fas fa-thumbs-up"></i> Olumlu Kaydet
+                    </button>
+                    <button class="btn btn-danger" onclick="saveNoteEdit(${noteId}, 'olumsuz')">
+                        <i class="fas fa-thumbs-down"></i> Olumsuz Kaydet
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeNoteEditModal()">
+                        <i class="fas fa-times"></i> İptal
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Modal'ı sayfaya ekle
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Textarea'ya focus ver
+    document.getElementById('edit-note-text').focus();
+}
+
+// Not düzenlemeyi kaydet
+function saveNoteEdit(noteId, noteType) {
+    const newContent = document.getElementById('edit-note-text').value.trim();
+    
+    if (!newContent) {
+        alert('Not içeriği boş olamaz!');
+        return;
+    }
+    
+    updateNote(noteId, newContent, noteType);
+    closeNoteEditModal();
+}
+
+// Not düzenleme modalını kapat
+function closeNoteEditModal() {
+    const modal = document.getElementById('note-edit-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Not güncelleme
+async function updateNote(noteId, content, noteType) {
+    if (!content) {
+        alert('Not içeriği boş olamaz!');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/notlar/${noteId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ not_metni: content, kategori: noteType })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            loadActivities(currentPersonelId);
+        } else {
+            alert('Hata: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Not güncellenirken hata:', error);
+        alert('Bir hata oluştu!');
+    }
+}
+
+// Görev silme
+async function deleteTask(taskId) {
+    if (!confirm('Bu görevi silmek istediğinizden emin misiniz?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/gorevler/${taskId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            loadActivities(currentPersonelId);
+        } else {
+            alert('Hata: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Görev silinirken hata:', error);
+        alert('Bir hata oluştu!');
+    }
+}
+
+// Görev düzenleme - Modal ile
+function editTask(taskId, baslik, aciklama, bitisTarihi, performans) {
+    showTaskEditModal(taskId, baslik, aciklama, bitisTarihi, performans);
+}
+
+// Görev düzenleme modalını göster
+function showTaskEditModal(taskId, baslik, aciklama, bitisTarihi, performans) {
+    const modalHtml = `
+        <div id="task-edit-modal" class="modal-overlay">
+            <div class="modal-content task-modal">
+                <h3>Görev Düzenle</h3>
+                
+                <div class="form-group">
+                    <label>Görev Başlığı:</label>
+                    <input type="text" id="edit-task-title" value="${baslik}" placeholder="Görev başlığı...">
+                </div>
+                
+                <div class="form-group">
+                    <label>Görev Açıklaması:</label>
+                    <textarea id="edit-task-description" rows="3" placeholder="Görev açıklaması...">${aciklama}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Bitiş Tarihi:</label>
+                    <input type="date" id="edit-task-date" value="${bitisTarihi}">
+                </div>
+                
+                ${performans > 0 ? `
+                    <div class="form-group">
+                        <label>Performans Puanı:</label>
+                        <div class="star-edit-section">
+                            <div class="stars-edit">
+                                ${[1,2,3,4,5].map(i => `
+                                    <span class="star-edit ${performans >= i ? 'filled' : ''}" 
+                                          onclick="setEditStarRating(${i})" 
+                                          data-rating="${i}" 
+                                          title="${i} yıldız">★</span>
+                                `).join('')}
+                            </div>
+                            <span id="star-rating-text">${performans}/5</span>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div class="task-edit-buttons">
+                    <button class="btn btn-success" onclick="saveTaskEdit(${taskId}, ${performans})">
+                        <i class="fas fa-save"></i> Kaydet
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeTaskEditModal()">
+                        <i class="fas fa-times"></i> İptal
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.getElementById('edit-task-title').focus();
+}
+
+// Yıldız puanını ayarla
+function setEditStarRating(rating) {
+    const stars = document.querySelectorAll('.star-edit');
+    const ratingText = document.getElementById('star-rating-text');
+    
+    console.log('Yıldız puanı ayarlanıyor:', rating); // Debug için
+    
+    stars.forEach((star, index) => {
+        star.dataset.rating = index + 1; // Her yıldızın kendi puanını ayarla
+        
+        if (index < rating) {
+            star.classList.add('filled');
+        } else {
+            star.classList.remove('filled');
+        }
+    });
+    
+    if (ratingText) {
+        ratingText.textContent = `${rating}/5`;
+    }
+}
+
+// Yıldız hover efekti - Event delegation ile
+document.addEventListener('mouseover', function(e) {
+    if (e.target.classList.contains('star-edit')) {
+        const rating = parseInt(e.target.dataset.rating);
+        const starsContainer = e.target.parentElement;
+        const stars = starsContainer.querySelectorAll('.star-edit');
+        
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.style.color = '#ffc107';
+            } else {
+                star.style.color = '#ddd';
+            }
+        });
+    }
+});
+
+// Yıldız hover çıkış efekti
+document.addEventListener('mouseout', function(e) {
+    if (e.target.classList.contains('star-edit')) {
+        const starsContainer = e.target.parentElement;
+        const stars = starsContainer.querySelectorAll('.star-edit');
+        
+        stars.forEach(star => {
+            // Orijinal duruma dön
+            star.style.color = '';
+        });
+    }
+});
+
+// Görev düzenlemeyi kaydet
+function saveTaskEdit(taskId, hasPerformance) {
+    const title = document.getElementById('edit-task-title').value.trim();
+    const description = document.getElementById('edit-task-description').value.trim();
+    const date = document.getElementById('edit-task-date').value;
+    
+    if (!title) {
+        alert('Görev başlığı boş olamaz!');
+        return;
+    }
+    
+    const taskData = {
+        gorev_baslik: title,
+        gorev_aciklama: description,
+        bitis_tarihi: date || null
+    };
+    
+    // Eğer performans puanı varsa ekle
+    if (hasPerformance > 0) {
+        // Seçili yıldız sayısını bul
+        const filledStars = document.querySelectorAll('.star-edit.filled');
+        const rating = filledStars.length > 0 ? filledStars.length : hasPerformance;
+        
+        console.log('Seçili yıldız sayısı:', rating); // Debug için
+        
+        taskData.performans_puani = rating;
+        taskData.durum = 'tamamlandi';
+    }
+    
+    updateTaskDetails(taskId, taskData);
+    closeTaskEditModal();
+}
+
+// Görev düzenleme modalını kapat
+function closeTaskEditModal() {
+    const modal = document.getElementById('task-edit-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Görev detaylarını güncelleme
+async function updateTaskDetails(taskId, taskData) {
+    try {
+        const response = await fetch(`/api/gorevler/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(taskData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            loadActivities(currentPersonelId);
+        } else {
+            alert('Hata: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Görev güncellenirken hata:', error);
+        alert('Bir hata oluştu!');
+    }
+}
+
+// Menü toggle fonksiyonları
+function toggleCardMenu(event, personelId) {
+    event.stopPropagation(); // Kartın tıklama olayını engelle
+    
+    const menu = document.getElementById(`menu-${personelId}`);
+    const allMenus = document.querySelectorAll('.menu-dropdown');
+    
+    // Diğer menüleri kapat
+    allMenus.forEach(m => {
+        if (m !== menu) m.classList.remove('show');
+    });
+    
+    // Bu menüyü aç/kapat
+    menu.classList.toggle('show');
+}
+
+function toggleActivityMenu(event, menuId) {
+    event.stopPropagation();
+    
+    const menu = document.getElementById(`menu-${menuId}`);
+    const allMenus = document.querySelectorAll('.menu-dropdown');
+    
+    // Diğer menüleri kapat
+    allMenus.forEach(m => {
+        if (m !== menu) m.classList.remove('show');
+    });
+    
+    // Bu menüyü aç/kapat
+    menu.classList.toggle('show');
+}
+
+// Sayfa tıklandığında menüleri kapat
+document.addEventListener('click', function() {
+    const allMenus = document.querySelectorAll('.menu-dropdown');
+    allMenus.forEach(menu => menu.classList.remove('show'));
+});

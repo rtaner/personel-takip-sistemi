@@ -162,10 +162,17 @@ header p {
 
 /* Star Rating Styles */
 .star-rating {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     margin-top: 10px;
+}
+
+.star-rating-row {
+    margin-bottom: 8px;
+}
+
+.star-rating-row span {
+    font-weight: 500;
+    color: #333;
+    font-size: 0.9rem;
 }
 
 .stars {
@@ -202,6 +209,311 @@ header p {
     margin-top: 10px;
     border-left: 3px solid #ffc107;
     font-size: 0.9rem;
+}
+
+/* Performans Bölümü */
+.performance-section {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #ffc107;
+}
+
+.performance-stars-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.performance-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.performance-stars {
+    font-size: 1.2rem;
+    color: #ffc107;
+}
+
+.performance-text {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Card Actions - Üç Nokta Menüsü */
+.personel-card {
+    position: relative;
+}
+
+.card-content {
+    cursor: pointer;
+}
+
+.card-menu {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.menu-trigger {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(0,0,0,0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: #666;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.personel-card .menu-trigger {
+    opacity: 1; /* Personel kartlarında sürekli görünür */
+}
+
+.personel-card:hover .menu-trigger {
+    opacity: 1;
+    background: rgba(0,0,0,0.2);
+}
+
+.menu-trigger:hover {
+    background: rgba(0,0,0,0.2);
+    color: #333;
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 120px;
+    z-index: 1000;
+    display: none;
+}
+
+.menu-dropdown.show {
+    display: block;
+}
+
+.menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-size: 0.9rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease;
+}
+
+.menu-item:hover {
+    background: #f8f9fa;
+}
+
+.menu-item:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.menu-item:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+.menu-item.edit {
+    color: #17a2b8;
+}
+
+.menu-item.delete {
+    color: #dc3545;
+}
+
+/* Activity Actions - Üç Nokta Menüsü */
+.activity-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.activity-menu {
+    position: relative;
+}
+
+.activity-menu .menu-trigger {
+    opacity: 0.5;
+    font-size: 0.7rem;
+    width: 20px;
+    height: 20px;
+}
+
+.activity-item:hover .activity-menu .menu-trigger {
+    opacity: 1;
+}
+
+.activity-menu .menu-dropdown {
+    right: 0;
+    min-width: 100px;
+}
+
+.activity-menu .menu-item {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
+/* Not Düzenleme Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    margin-bottom: 15px;
+    color: #333;
+    text-align: center;
+}
+
+.modal-content textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    margin-bottom: 20px;
+    transition: border-color 0.3s ease;
+}
+
+.modal-content textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.note-edit-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.note-edit-buttons .btn {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+}
+
+/* Görev Düzenleme Modal */
+.task-modal {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.star-edit-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stars-edit {
+    display: flex;
+    gap: 3px;
+}
+
+.star-edit {
+    font-size: 1.8rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.star-edit:hover {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.star-edit.filled {
+    color: #ffc107;
+}
+
+#star-rating-text {
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+    min-width: 40px;
+}
+
+.task-edit-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.task-edit-buttons .btn {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
 }
 
 .btn-voice {

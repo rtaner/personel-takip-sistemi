@@ -3310,6 +3310,30 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
             hrAnalysis = generateMockHRAnalysis(personnelData);
         }
 
+        // Data summary ve personnel info'yu hesapla
+        const dataSummary = {
+            total_notes: notes.length,
+            positive_notes: notes.filter(n => n.kategori === 'olumlu').length,
+            negative_notes: notes.filter(n => n.kategori === 'olumsuz').length,
+            performance_scores: performanceScores.length
+        };
+
+        const personnelInfo_formatted = {
+            id: personnelInfo.id,
+            name: `${personnelInfo.ad} ${personnelInfo.soyad}`,
+            position: personnelInfo.pozisyon,
+            organization: personnelInfo.organizasyon_adi
+        };
+
+        // Analiz verisine metadata ekle
+        const enrichedAnalysis = {
+            ...hrAnalysis,
+            _metadata: {
+                data_summary: dataSummary,
+                personnel_info: personnelInfo_formatted
+            }
+        };
+
         // Analiz sonucunu veritabanına kaydet
         let analysisId;
         if (useSupabase) {
@@ -3317,7 +3341,7 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
                 .from('hr_analysis_reports')
                 .insert([{
                     personel_id: parseInt(personnelId),
-                    analysis_data: hrAnalysis,
+                    analysis_data: enrichedAnalysis,
                     overall_risk_level: hrAnalysis.executive_summary.overall_risk_level,
                     immediate_action_required: hrAnalysis.executive_summary.immediate_action_required ? 1 : 0,
                     created_by: req.user.id
@@ -3341,7 +3365,7 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
                     ) VALUES (?, ?, ?, ?, datetime('now'), ?)
                 `, [
                     personnelId,
-                    JSON.stringify(hrAnalysis),
+                    JSON.stringify(enrichedAnalysis),
                     hrAnalysis.executive_summary.overall_risk_level,
                     hrAnalysis.executive_summary.immediate_action_required ? 1 : 0,
                     req.user.id
@@ -3357,18 +3381,8 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
         res.json({
             success: true,
             analysis_id: analysisId,
-            personnel_info: {
-                id: personnelInfo.id,
-                name: `${personnelInfo.ad} ${personnelInfo.soyad}`,
-                position: personnelInfo.pozisyon,
-                organization: personnelInfo.organizasyon_adi
-            },
-            data_summary: {
-                total_notes: notes.length,
-                positive_notes: notes.filter(n => n.kategori === 'olumlu').length,
-                negative_notes: notes.filter(n => n.kategori === 'olumsuz').length,
-                performance_scores: performanceScores.length
-            },
+            personnel_info: personnelInfo_formatted,
+            data_summary: dataSummary,
             hr_analysis: hrAnalysis,
             generated_at: new Date().toISOString(),
             generated_by: req.user.full_name || req.user.username || 'Bilinmiyor'
@@ -3483,18 +3497,23 @@ app.get('/api/personel/:id/last-hr-analysis', authenticateToken, filterByOrganiz
             });
         }
 
+        // Metadata'dan veri al (eğer varsa)
+        const metadata = analysisData._metadata || {};
+        const savedDataSummary = metadata.data_summary;
+        const savedPersonnelInfo = metadata.personnel_info;
+
         // Orijinal format ile uyumlu hale getir
         const formattedResult = {
             success: true,
             analysis_id: lastReport.id,
-            personnel_info: {
+            personnel_info: savedPersonnelInfo || {
                 id: personnelInfo.id,
                 name: `${personnelInfo.ad} ${personnelInfo.soyad}`,
                 position: personnelInfo.pozisyon,
                 organization: personnelInfo.organizasyon_adi || 'Bilinmiyor'
             },
-            data_summary: {
-                total_notes: 0, // Bu bilgiyi tekrar hesaplamaya gerek yok
+            data_summary: savedDataSummary || {
+                total_notes: 0,
                 positive_notes: 0,
                 negative_notes: 0,
                 performance_scores: 0
@@ -3623,18 +3642,23 @@ app.get('/api/hr-analysis/:reportId', authenticateToken, async (req, res) => {
         // Analiz verisini parse et
         const analysisData = useSupabase ? report.analysis_data : JSON.parse(report.analysis_data);
 
+        // Metadata'dan veri al (eğer varsa)
+        const metadata = analysisData._metadata || {};
+        const savedDataSummary = metadata.data_summary;
+        const savedPersonnelInfo = metadata.personnel_info;
+
         // Orijinal format ile uyumlu hale getir
         const formattedResult = {
             success: true,
             analysis_id: report.id,
-            personnel_info: {
+            personnel_info: savedPersonnelInfo || {
                 id: report.personel_id,
                 name: useSupabase ? `${report.personel.ad} ${report.personel.soyad}` : `${report.ad} ${report.soyad}`,
                 position: useSupabase ? report.personel.pozisyon : report.pozisyon,
-                organization: 'Bilinmiyor' // Organizasyon bilgisi eksik, gerekirse eklenebilir
+                organization: 'Bilinmiyor'
             },
-            data_summary: {
-                total_notes: 0, // Bu veriler analiz sırasında hesaplanmış olmalı
+            data_summary: savedDataSummary || {
+                total_notes: 0,
                 positive_notes: 0,
                 negative_notes: 0,
                 performance_scores: 0

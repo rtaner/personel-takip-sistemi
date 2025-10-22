@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Yönetimi - Personel Takip Sistemi</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-user-cog"></i> Profil Yönetimi</h1>
+                <p>Hesap bilgilerinizi güncelleyin</p>
+            </div>
+            <!-- Kullanıcı bilgileri JavaScript ile eklenecek -->
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-btn active" onclick="showTab('profile', event)">
+                <i class="fas fa-user"></i> Profil Bilgileri
+            </button>
+            <button class="tab-btn" onclick="showTab('password', event)">
+                <i class="fas fa-lock"></i> Şifre Değiştir
+            </button>
+        </nav>
+
+        <!-- Profil Bilgileri Sekmesi -->
+        <div id="profile-tab" class="tab-content active">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon settings">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="card-title">Profil Bilgileri</h3>
+                </div>
+                <form id="profile-form" onsubmit="updateProfile(event)">
+                    <div class="form-group">
+                        <label>Ad Soyad</label>
+                        <input type="text" id="full-name" required>
+                        <small class="form-help">Görünen adınız</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Kullanıcı Adı</label>
+                        <input type="text" id="username" readonly>
+                        <small class="form-help">Kullanıcı adı değiştirilemez</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Rol</label>
+                        <input type="text" id="role" readonly>
+                        <small class="form-help">Rolünüz organizasyon sahibi tarafından belirlenir</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Organizasyon</label>
+                        <input type="text" id="organization" readonly>
+                        <small class="form-help">Bağlı olduğunuz organizasyon</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Profili Güncelle
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/'">
+                            <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Şifre Değiştirme Sekmesi -->
+        <div id="password-tab" class="tab-content">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <div class="card-icon settings">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 class="card-title">Şifre Değiştir</h3>
+                </div>
+                <form id="password-form" onsubmit="updatePassword(event)">
+                    <div class="form-group">
+                        <label>Mevcut Şifre</label>
+                        <input type="password" id="current-password" required>
+                        <small class="form-help">Güvenlik için mevcut şifrenizi girin</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Yeni Şifre</label>
+                        <input type="password" id="new-password" required minlength="6">
+                        <small class="form-help">En az 6 karakter olmalıdır</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Yeni Şifre Tekrar</label>
+                        <input type="password" id="confirm-password" required minlength="6">
+                        <small class="form-help">Yeni şifrenizi tekrar girin</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-key"></i> Şifreyi Değiştir
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearPasswordForm()">
+                            <i class="fas fa-times"></i> Temizle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="route-guard.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>

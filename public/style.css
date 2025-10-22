@@ -1,4 +1,4 @@
-* {
+﻿* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -9,6 +9,14 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     color: #333;
+    font-size: 14px;
+}
+
+/* Mobil iÃ§in daha bÃ¼yÃ¼k temel font */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px;
+    }
 }
 
 .container {
@@ -18,9 +26,52 @@ body {
 }
 
 header {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     color: white;
     margin-bottom: 30px;
+}
+
+.header-content {
+    text-align: center;
+    flex: 1;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.user-role {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.user-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 12px;
 }
 
 header h1 {
@@ -153,6 +204,16 @@ header p {
     background: #c82333;
 }
 
+.btn-purple {
+    background: #6f42c1;
+    color: white;
+}
+
+.btn-purple:hover {
+    background: #5a32a3;
+    transform: translateY(-2px);
+}
+
 .note-type-buttons {
     display: flex;
     gap: 10px;
@@ -211,7 +272,7 @@ header p {
     font-size: 0.9rem;
 }
 
-/* Performans Bölümü */
+/* Performans BÃ¶lÃ¼mÃ¼ */
 .performance-section {
     margin-top: 15px;
     padding: 12px;
@@ -244,7 +305,7 @@ header p {
     font-weight: 500;
 }
 
-/* Card Actions - Üç Nokta Menüsü */
+/* Card Actions - ÃœÃ§ Nokta MenÃ¼sÃ¼ */
 .personel-card {
     position: relative;
 }
@@ -276,7 +337,7 @@ header p {
 }
 
 .personel-card .menu-trigger {
-    opacity: 1; /* Personel kartlarında sürekli görünür */
+    opacity: 1; /* Personel kartlarÄ±nda sÃ¼rekli gÃ¶rÃ¼nÃ¼r */
 }
 
 .personel-card:hover .menu-trigger {
@@ -341,7 +402,7 @@ header p {
     color: #dc3545;
 }
 
-/* Activity Actions - Üç Nokta Menüsü */
+/* Activity Actions - ÃœÃ§ Nokta MenÃ¼sÃ¼ */
 .activity-actions {
     display: flex;
     align-items: center;
@@ -373,7 +434,7 @@ header p {
     font-size: 0.8rem;
 }
 
-/* Not Düzenleme Modal */
+/* Not DÃ¼zenleme Modal */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -434,7 +495,7 @@ header p {
     justify-content: center;
 }
 
-/* Görev Düzenleme Modal */
+/* GÃ¶rev DÃ¼zenleme Modal */
 .task-modal {
     max-width: 600px;
 }
@@ -618,6 +679,16 @@ header p {
 .action-buttons {
     display: flex;
     gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.export-buttons {
+    display: flex;
+    gap: 5px;
+    margin-left: 10px;
+    padding-left: 10px;
+    border-left: 1px solid #ddd;
 }
 
 /* Activity Items */
@@ -826,5 +897,1646 @@ select {
     
     .form-actions {
         flex-direction: column;
+    }
+}
+/* User M
+enu Dropdown */
+.user-menu-dropdown {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid #e0e0e0;
+    min-width: 200px;
+    overflow: hidden;
+    animation: fadeInDown 0.2s ease;
+}
+
+.user-menu-dropdown .menu-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #333;
+    font-size: 14px;
+}
+
+.user-menu-dropdown .menu-item:hover {
+    background-color: #f5f5f5;
+}
+
+.user-menu-dropdown .menu-item i {
+    width: 16px;
+    text-align: center;
+}
+
+.user-menu-dropdown .menu-divider {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 5px 0;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Role-based visibility helpers */
+.role-admin-only,
+.role-owner-only,
+.permission-required {
+    transition: opacity 0.3s ease;
+}
+
+.role-admin-only.hidden,
+.role-owner-only.hidden,
+.permission-required.hidden {
+    display: none !important;
+}
+
+/* Disabled button styles */
+button:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+/* Responsive user info */
+@media (max-width: 768px) {
+    .user-info {
+        flex-direction: column;
+        gap: 10px;
+        padding: 8px 12px;
+    }
+    
+    .user-details {
+        align-items: center;
+    }
+    
+    .user-actions {
+        justify-content: center;
+    }
+    
+    .user-name {
+        font-size: 13px;
+    }
+    
+    .user-role {
+        font-size: 11px;
+    }
+}/* D
+ashboard Widgets */
+.dashboard-widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.dashboard-widget {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.dashboard-widget:hover {
+    transform: translateY(-2px);
+}
+
+.widget-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.widget-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-size: 18px;
+    color: white;
+}
+
+.widget-icon.primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+.widget-icon.success { background: linear-gradient(135deg, #56ab2f, #a8e6cf); }
+.widget-icon.warning { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.widget-icon.info { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+
+.widget-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.widget-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.widget-label {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Personel Dashboard */
+.my-tasks-section,
+.my-notes-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.section-title i {
+    margin-right: 10px;
+    color: #667eea;
+}
+
+.task-item,
+.note-item {
+    padding: 12px;
+    border-left: 4px solid #667eea;
+    background: #f8f9fa;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 10px;
+}
+
+.task-item.completed {
+    border-left-color: #28a745;
+    opacity: 0.7;
+}
+
+.task-item.overdue {
+    border-left-color: #dc3545;
+}
+
+.task-title,
+.note-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.task-meta,
+.note-meta {
+    font-size: 12px;
+    color: #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.pending { background: #fff3cd; color: #856404; }
+.status-badge.in-progress { background: #d1ecf1; color: #0c5460; }
+.status-badge.completed { background: #d4edda; color: #155724; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dashboard-widgets {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+    }
+}/
+* Not oluÅŸturan kiÅŸi bilgisi */
+.note-author {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.note-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.note-date {
+    color: #666;
+    font-size: 12px;
+}
+
+.note-category {
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.note-category.olumlu {
+    background: #d4edda;
+    color: #155724;
+}
+
+.note-category.olumsuz {
+    background: #f8d7da;
+    color: #721c24;
+}/* Yetk
+inlik Analizi Widget Stilleri */
+.competency-widget {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 5px solid #667eea;
+}
+
+.competency-widget h3 {
+    margin-bottom: 20px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.competency-overview {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.overall-score {
+    text-align: center;
+}
+
+.score-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px auto;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.competency-details h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.competency-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.competency-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.competency-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.competency-score {
+    font-weight: bold;
+    color: #667eea;
+}
+
+.competency-bar {
+    width: 100%;
+    height: 8px;
+    background: #e1e5e9;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.competency-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.competency-info {
+    color: #666;
+    font-size: 12px;
+}
+
+.ai-recommendations {
+    margin-top: 25px;
+    padding: 20px;
+    background: #f0f8ff;
+    border-radius: 10px;
+    border-left: 4px solid #4facfe;
+}
+
+.ai-recommendations h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.recommendations-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.recommendations-content p {
+    margin-bottom: 8px;
+    color: #555;
+    line-height: 1.5;
+    padding: 5px 0;
+}
+
+.recommendations-content p:first-child {
+    font-weight: bold;
+    color: #333;
+    font-size: 16px;
+}
+
+.ai-recommendations ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.ai-recommendations li {
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.report-info {
+    margin-top: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .competency-widget {
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .competency-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .score-circle {
+        width: 60px;
+        height: 60px;
+        font-size: 18px;
+    }
+}
+
+/* Ä°K Analizi Modal Stilleri */
+    max-width: 1200px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.data-summary {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.badge-info { background: #17a2b8; color: white; }
+.badge-success { background: #28a745; color: white; }
+.badge-danger { background: #dc3545; color: white; }
+.badge-secondary { background: #6c757d; color: white; }
+
+.risk-level {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.risk-critical { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+.risk-high { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+.risk-medium { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+.risk-low { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+
+.concerns-strengths {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.concerns h4 { color: #dc3545; }
+.strengths h4 { color: #28a745; }
+
+.alert {
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+}
+
+.alert-danger { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+.alert-success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+
+.action-group {
+    margin-bottom: 20px;
+}
+
+.action-group h4 {
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+.action-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.priority-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.priority-critical .priority-badge { background: #dc3545; color: white; }
+.priority-high .priority-badge { background: #fd7e14; color: white; }
+.priority-medium .priority-badge { background: #ffc107; color: #212529; }
+.priority-low .priority-badge { background: #28a745; color: white; }
+
+.action-details {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.action-details > div {
+    margin-bottom: 5px;
+}
+
+.coaching-item {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.success-metrics {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.monitoring-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.monitoring-grid > div {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.business-impact > div {
+    margin-bottom: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.follow-up-info > div {
+    margin-bottom: 8px;
+    padding: 5px 0;
+}
+
+    font-style: italic;
+    color: #6c757d;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .concerns-strengths {
+        grid-template-columns: 1fr;
+    }
+    
+    .monitoring-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+}/*
+ ===== ANALÄ°ZLER SEKMESÄ° STÄ°LLERÄ° ===== */
+
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 1rem 0;
+}
+
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 100px;
+}
+
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+    font-size: 2rem;
+    color: #007bff;
+    min-width: 60px;
+    text-align: center;
+}
+
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Risk KartlarÄ± */
+    background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+    border-color: #fc8181;
+}
+
+    color: #e53e3e;
+}
+
+    border-color: #e53e3e;
+}
+
+    background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%);
+    border-color: #f6ad55;
+}
+
+    color: #dd6b20;
+}
+
+    border-color: #dd6b20;
+}
+
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-color: #a0aec0;
+}
+
+    color: #4a5568;
+}
+
+    border-color: #4a5568;
+}
+
+/* Dashboard Stilleri */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: #007bff;
+    min-width: 60px;
+    text-align: center;
+}
+
+.stat-content h3 {
+    margin: 0;
+    font-size: 2rem;
+    color: #2c3e50;
+}
+
+.stat-content p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+    font-size: 2rem;
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+}
+
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Mobil Optimizasyon */
+@media (max-width: 768px) {
+    /* Genel font boyutlarÄ± */
+    body {
+        font-size: 16px;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.3rem;
+    }
+    
+    h4 {
+        font-size: 1.1rem;
+    }
+    
+        grid-template-columns: 1fr;
+    }
+    
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+        grid-template-columns: 1fr;
+    }
+    
+        padding: 1.25rem;
+        min-height: 100px;
+    }
+    
+        font-size: 1.2rem;
+    }
+    
+        font-size: 1rem;
+    }
+    
+        font-size: 2rem;
+        min-width: 60px;
+    }
+    
+        padding: 1.25rem;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+        min-width: 60px;
+    }
+    
+    .stat-content h3 {
+        font-size: 2rem;
+    }
+    
+    .stat-content p {
+        font-size: 1rem;
+    }
+    
+        padding: 1.5rem;
+    }
+    
+        font-size: 1.2rem;
+    }
+    
+        font-size: 1rem;
+    }
+}
+
+/* Sekme ButonlarÄ± Mobil Optimizasyon */
+@media (max-width: 768px) {
+    .tab-nav {
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+    
+    .tab-btn {
+        padding: 1rem 0.75rem;
+        font-size: 1rem;
+        min-height: 60px; /* Daha bÃ¼yÃ¼k dokunma alanÄ± */
+        font-weight: 500;
+    }
+    
+    .tab-btn i {
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+    }
+}/* ===
+== BÄ°LDÄ°RÄ°M SÄ°STEMÄ° ===== */
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 10000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 300px;
+}
+
+    transform: translateX(0);
+    opacity: 1;
+}
+
+    border-left: 4px solid #28a745;
+    color: #155724;
+}
+
+    border-left: 4px solid #dc3545;
+    color: #721c24;
+}
+
+    border-left: 4px solid #007bff;
+    color: #004085;
+}
+
+    font-size: 1.2rem;
+}
+
+/* Personel SeÃ§im ModalÄ± */
+.personel-selection {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.personel-selection-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.personel-selection-item:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.personel-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: #2c3e50;
+}
+
+.personel-info p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #007bff;
+    font-weight: 500;
+}
+
+    font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        transform: translateY(-100px);
+    }
+    
+        transform: translateY(0);
+    }
+}/* Per
+sonel KartlarÄ± Mobil Optimizasyon */
+@media (max-width: 768px) {
+    .personel-card {
+        padding: 1.5rem;
+        min-height: 120px;
+    }
+    
+    .personel-card h3 {
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .personel-card p {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .personel-card .btn {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        min-height: 44px;
+    }
+    
+    /* Form elemanlarÄ± */
+    input, textarea, select {
+        font-size: 16px !important; /* iOS zoom'u Ã¶nlemek iÃ§in */
+        padding: 0.75rem;
+        min-height: 44px;
+    }
+    
+    .btn {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+        min-height: 44px;
+    }
+    
+    /* Modal baÅŸlÄ±klarÄ± */
+    .modal-content h2 {
+        font-size: 1.4rem;
+    }
+    
+    .modal-content h3 {
+        font-size: 1.2rem;
+    }
+    
+    .modal-content p {
+        font-size: 1rem;
+    }
+    
+    /* Bildirimler */
+        font-size: 1rem;
+        padding: 1rem 1.25rem;
+    }
+    
+    /* Personel seÃ§im modalÄ± */
+    .personel-selection-item {
+        padding: 1.25rem;
+    }
+    
+    .personel-info h4 {
+        font-size: 1.2rem;
+    }
+    
+    .personel-info p {
+        font-size: 1rem;
+    }
+    
+        font-size: 1rem;
+    }
+}
+/* ===== PERSONEL LİSTESİ STİLLERİ ===== */
+.personel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.personel-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.personel-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.personel-card h3 {
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+}
+
+.personel-card p {
+    margin: 0 0 1rem 0;
+    color: #7f8c8d;
+}
+
+.personel-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* ===== AKTİVİTE LİSTESİ STİLLERİ ===== */
+.activity-item {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.activity-type {
+    font-weight: 500;
+    color: #3498db;
+}
+
+.activity-date {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.activity-content h4 {
+    margin: 0 0 0.5rem 0;
+    color: #2c3e50;
+}
+
+.activity-content p {
+    margin: 0;
+    color: #34495e;
+}
+
+.note-item.olumlu {
+    border-left: 4px solid #27ae60;
+}
+
+.note-item.olumsuz {
+    border-left: 4px solid #e74c3c;
+}
+
+.task-status {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-badge.beklemede {
+    background: #f39c12;
+    color: white;
+}
+
+.status-badge.devam_ediyor {
+    background: #3498db;
+    color: white;
+}
+
+.status-badge.tamamlandi {
+    background: #27ae60;
+    color: white;
+}
+
+.performance {
+    font-weight: 500;
+    color: #8e44ad;
+}
+
+/* ===== DASHBOARD STİLLERİ ===== */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.dashboard-card h3 {
+    margin: 0 0 1rem 0;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #3498db;
+}
+
+/* ===== GENEL STİLLER ===== */
+.no-data {
+    text-align: center;
+    color: #7f8c8d;
+    font-style: italic;
+    padding: 2rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* ===== MOBİL OPTİMİZASYON ===== */
+@media (max-width: 768px) {
+    .personel-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .activity-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    
+    .task-status {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}/* 
+Personel kartı menü stilleri */
+.card-menu {
+    position: relative;
+}
+
+.menu-trigger {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.menu-trigger:hover {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 150px;
+    display: none;
+    overflow: hidden;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 14px;
+    color: #333;
+}
+
+.menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+.menu-item.edit {
+    color: #007bff;
+}
+
+.menu-item.edit:hover {
+    background-color: #e3f2fd;
+}
+
+.menu-item.delete {
+    color: #dc3545;
+}
+
+.menu-item.delete:hover {
+    background-color: #ffebee;
+}
+
+.menu-item i {
+    width: 16px;
+    text-align: center;
+}
+
+/* Personel kartı hover efekti */
+.personel-card:hover .menu-trigger {
+    opacity: 1;
+}
+
+.menu-trigger {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+/* Mobil uyumluluk */
+@media (max-width: 768px) {
+    .menu-trigger {
+        opacity: 1;
+        padding: 12px;
+    }
+    
+    .menu-dropdown {
+        min-width: 140px;
+    }
+    
+    .menu-item {
+        padding: 14px 16px;
+        font-size: 16px;
+    }
+}/*
+ Personel kartı stilleri */
+.personel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.personel-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #e0e0e0;
+}
+
+.personel-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card-content {
+    padding: 20px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.personel-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.card-content h3 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.card-content .pozisyon {
+    color: #666;
+    font-size: 14px;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.card-menu {
+    padding: 10px;
+    display: flex;
+    align-items: flex-start;
+}
+
+/* Mobil uyumluluk */
+@media (max-width: 768px) {
+    .personel-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .personel-card {
+        margin: 0 10px;
+    }
+    
+    .card-content {
+        padding: 16px;
+    }
+    
+    .card-content h3 {
+        font-size: 16px;
+    }
+}/*
+ Modern Personel Kartı Tasarımı - Yeniden Yazıldı */
+.personel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    padding: 24px 0;
+}
+
+.personel-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: visible;
+    display: flex;
+    align-items: stretch;
+}
+
+.personel-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.card-content {
+    padding: 24px;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card-content h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.025em;
+}
+
+.card-content .pozisyon {
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 500;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: inline-block;
+    max-width: fit-content;
+}
+
+.card-menu {
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+}
+
+/* Modern Menü Tasarımı */
+.menu-trigger {
+    background: rgba(107, 114, 128, 0.1);
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+}
+
+.menu-trigger:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    transform: scale(1.05);
+}
+
+.menu-trigger:active {
+    transform: scale(0.95);
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    z-index: 1000;
+    min-width: 180px;
+    display: none;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    animation: menuSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes menuSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 15px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.menu-item:hover {
+    background: rgba(99, 102, 241, 0.05);
+    color: #1f2937;
+}
+
+.menu-item.edit {
+    color: #059669;
+}
+
+.menu-item.edit:hover {
+    background: rgba(5, 150, 105, 0.1);
+    color: #047857;
+}
+
+.menu-item.delete {
+    color: #dc2626;
+}
+
+.menu-item.delete:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #b91c1c;
+}
+
+.menu-item i {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+/* Mobil Optimizasyonu */
+@media (max-width: 768px) {
+    .personel-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 16px;
+    }
+    
+    .personel-card {
+        margin: 0;
+        border-radius: 12px;
+    }
+    
+    .card-content {
+        padding: 20px;
+    }
+    
+    .card-content h3 {
+        font-size: 18px;
+    }
+    
+    .card-content .pozisyon {
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+    
+    .menu-trigger {
+        width: 48px;
+        height: 48px;
+        padding: 14px;
+    }
+    
+    .menu-dropdown {
+        min-width: 160px;
+        border-radius: 12px;
+    }
+    
+    .menu-item {
+        padding: 18px 20px;
+        font-size: 16px;
+    }
+    
+    .menu-item i {
+        font-size: 18px;
+    }
+}
+
+/* Tablet Optimizasyonu */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .personel-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* Büyük Ekranlar */
+@media (min-width: 1200px) {
+    .personel-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 28px;
     }
 }

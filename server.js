@@ -3304,6 +3304,30 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
         let hrAnalysis;
         try {
             hrAnalysis = await advancedAI.analyzePersonnelComprehensive(personnelData);
+            
+            // Debug: Gemini'den gelen veriyi logla
+            console.log('🤖 Gemini API response keys:', Object.keys(hrAnalysis));
+            console.log('🤖 Executive summary keys:', hrAnalysis.executive_summary ? Object.keys(hrAnalysis.executive_summary) : 'yok');
+            console.log('🤖 Manager action plan keys:', hrAnalysis.manager_action_plan ? Object.keys(hrAnalysis.manager_action_plan) : 'yok');
+            
+            // Eğer manager_action_plan yoksa mock kullan
+            if (!hrAnalysis.manager_action_plan || !hrAnalysis.business_impact) {
+                console.log('⚠️ Gemini API eksik veri döndürdü, mock ile tamamlanıyor');
+                const mockAnalysis = generateMockHRAnalysis(personnelData);
+                
+                console.log('🔧 Mock analysis keys:', Object.keys(mockAnalysis));
+                console.log('🔧 Mock manager_action_plan keys:', mockAnalysis.manager_action_plan ? Object.keys(mockAnalysis.manager_action_plan) : 'yok');
+                
+                hrAnalysis = {
+                    ...hrAnalysis,
+                    manager_action_plan: hrAnalysis.manager_action_plan || mockAnalysis.manager_action_plan,
+                    business_impact: hrAnalysis.business_impact || mockAnalysis.business_impact,
+                    follow_up_schedule: hrAnalysis.follow_up_schedule || mockAnalysis.follow_up_schedule
+                };
+                
+                console.log('✅ Tamamlanmış analiz keys:', Object.keys(hrAnalysis));
+                console.log('✅ Final manager_action_plan keys:', hrAnalysis.manager_action_plan ? Object.keys(hrAnalysis.manager_action_plan) : 'yok');
+            }
         } catch (error) {
             console.log('⚠️ Gemini API hatası, mock analiz kullanılıyor:', error.message);
             // Mock analiz (test amaçlı)

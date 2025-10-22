@@ -3518,6 +3518,135 @@ app.get('/api/personel/:id/last-hr-analysis', authenticateToken, filterByOrganiz
     }
 });
 
+// İK Analizi Geçmişini Getir
+app.get('/api/personel/:id/hr-analysis-history', authenticateToken, filterByOrganization, async (req, res) => {
+    try {
+        const personnelId = req.params.id;
+
+        // Tüm analiz raporlarını getir - SUPABASE UYUMLU
+        let reports;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('hr_analysis_reports')
+                .select(`
+                    id,
+                    created_at,
+                    overall_risk_level,
+                    immediate_action_required,
+                    users!created_by(full_name, username)
+                `)
+                .eq('personel_id', personnelId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            reports = (data || []).map(report => ({
+                id: report.id,
+                created_at: report.created_at,
+                overall_risk_level: report.overall_risk_level,
+                immediate_action_required: report.immediate_action_required,
+                created_by_name: report.users?.full_name || report.users?.username || 'Bilinmiyor'
+            }));
+        } else {
+            // SQLite fallback
+            reports = await new Promise((resolve, reject) => {
+                db.all(`
+                    SELECT har.id, har.created_at, har.overall_risk_level, 
+                           har.immediate_action_required,
+                           COALESCE(u.full_name, u.username, 'Bilinmiyor') as created_by_name
+                    FROM hr_analysis_reports har
+                    LEFT JOIN users u ON har.created_by = u.id
+                    WHERE har.personel_id = ?
+                    ORDER BY har.created_at DESC
+                `, [personnelId], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows || []);
+                });
+            });
+        }
+
+        res.json({
+            success: true,
+            reports: reports
+        });
+
+    } catch (error) {
+        console.error('Analiz geçmişi getirme hatası:', error);
+        res.status(500).json({
+            error: 'Analiz geçmişi getirilirken hata oluştu'
+        });
+    }
+});
+
+// Belirli Bir İK Analizini Getir
+app.get('/api/hr-analysis/:reportId', authenticateToken, async (req, res) => {
+    try {
+        const reportId = req.params.reportId;
+
+        // Belirli analiz raporunu getir - SUPABASE UYUMLU
+        let report;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('hr_analysis_reports')
+                .select(`
+                    *,
+                    personel!personel_id(ad, soyad, pozisyon),
+                    users!created_by(full_name, username)
+                `)
+                .eq('id', reportId)
+                .maybeSingle();
+
+            if (error) throw error;
+            report = data;
+        } else {
+            // SQLite fallback
+            report = await new Promise((resolve, reject) => {
+                db.get(`
+                    SELECT har.*, 
+                           p.ad, p.soyad, p.pozisyon,
+                           COALESCE(u.full_name, u.username, 'Bilinmiyor') as created_by_name
+                    FROM hr_analysis_reports har
+                    JOIN personel p ON har.personel_id = p.id
+                    LEFT JOIN users u ON har.created_by = u.id
+                    WHERE har.id = ?
+                `, [reportId], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
+            });
+        }
+
+        if (!report) {
+            return res.status(404).json({ error: 'Analiz raporu bulunamadı' });
+        }
+
+        // Analiz verisini parse et
+        const analysisData = useSupabase ? report.analysis_data : JSON.parse(report.analysis_data);
+
+        // Orijinal format ile uyumlu hale getir
+        const formattedResult = {
+            success: true,
+            analysis_id: report.id,
+            personnel_info: {
+                id: report.personel_id,
+                name: useSupabase ? `${report.personel.ad} ${report.personel.soyad}` : `${report.ad} ${report.soyad}`,
+                position: useSupabase ? report.personel.pozisyon : report.pozisyon
+            },
+            hr_analysis: analysisData,
+            generated_at: report.created_at,
+            generated_by: useSupabase ? (report.users?.full_name || report.users?.username || 'Bilinmiyor') : report.created_by_name
+        };
+
+        res.json(formattedResult);
+
+    } catch (error) {
+        console.error('Analiz getirme hatası:', error);
+        res.status(500).json({
+            error: 'Analiz getirilirken hata oluştu'
+        });
+    }
+});
+
 // İK Analizi PDF İndir
 app.get('/api/personel/:id/hr-analysis-pdf', authenticateToken, filterByOrganization, async (req, res) => {
     try {

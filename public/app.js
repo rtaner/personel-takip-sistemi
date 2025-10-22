@@ -327,7 +327,7 @@ async function loadActivities(personelId) {
                 content: note.not_metni,
                 noteType: note.kategori, // artık olumlu/olumsuz olacak
                 id: note.id,
-                createdBy: note.created_by_name || note.full_name || note.username || 'Bilinmeyen'
+                createdBy: note.users?.full_name || note.users?.username || note.created_by_name || note.full_name || note.username || 'Bilinmeyen'
             });
         });
 
@@ -593,7 +593,62 @@ function setupSpeechRecognition() {
         }
         return;
     }
-    // Ses tanıma fonksiyonları burada implement edilecek
+
+    // Ses tanıma nesnesini oluştur
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+
+    // Ayarlar
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'tr-TR'; // Türkçe
+    recognition.maxAlternatives = 1;
+
+    // Ses tanıma başladığında
+    recognition.onstart = function () {
+        isRecording = true;
+        const voiceBtn = document.getElementById('voice-btn');
+        if (voiceBtn) {
+            voiceBtn.innerHTML = '<i class="fas fa-stop"></i> Dur';
+            voiceBtn.classList.add('recording');
+        }
+        console.log('Ses tanıma başladı...');
+    };
+
+    // Sonuç geldiğinde
+    recognition.onresult = function (event) {
+        const transcript = event.results[0][0].transcript;
+        console.log('Tanınan metin:', transcript);
+
+        // Not textarea'sına metni ekle
+        const noteTextarea = document.getElementById('note-text');
+        if (noteTextarea) {
+            const currentText = noteTextarea.value;
+            noteTextarea.value = currentText + (currentText ? ' ' : '') + transcript;
+        }
+    };
+
+    // Hata durumunda
+    recognition.onerror = function (event) {
+        console.error('Ses tanıma hatası:', event.error);
+        isRecording = false;
+        const voiceBtn = document.getElementById('voice-btn');
+        if (voiceBtn) {
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> Sesli Not';
+            voiceBtn.classList.remove('recording');
+        }
+    };
+
+    // Ses tanıma bittiğinde
+    recognition.onend = function () {
+        isRecording = false;
+        const voiceBtn = document.getElementById('voice-btn');
+        if (voiceBtn) {
+            voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> Sesli Not';
+            voiceBtn.classList.remove('recording');
+        }
+        console.log('Ses tanıma bitti');
+    };
 }
 
 // Placeholder fonksiyonlar
@@ -611,7 +666,23 @@ function deletePersonel(id, name) {
 }
 
 function toggleVoiceRecording() {
-    // Voice recording logic
+    if (!recognition) {
+        showNotification('Ses tanıma desteklenmiyor', 'error');
+        return;
+    }
+
+    if (isRecording) {
+        // Kaydı durdur
+        recognition.stop();
+    } else {
+        // Kaydı başlat
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('Ses tanıma başlatılamadı:', error);
+            showNotification('Ses tanıma başlatılamadı', 'error');
+        }
+    }
 }
 
 function showUserMenu(event) {

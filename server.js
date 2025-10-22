@@ -7,6 +7,15 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Environment variables kontrolü
+console.log('🔧 Environment Variables Kontrolü:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('USE_SUPABASE:', process.env.USE_SUPABASE);
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Tanımlı' : '❌ Eksik');
+console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? '✅ Tanımlı' : '❌ Eksik');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ Tanımlı' : '❌ Eksik');
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✅ Tanımlı' : '❌ Eksik');
+
 // AI Analiz Servisleri
 const AIAnalysisService = require('./ai-analysis-service');
 
@@ -245,10 +254,23 @@ let supabase = null;
 let useSupabase = false;
 
 // Supabase istemcisini oluştur
-if (supabaseUrl && supabaseKey) {
+if (process.env.USE_SUPABASE === 'true' && supabaseUrl && supabaseKey) {
     supabase = createClient(supabaseUrl, supabaseKey);
     useSupabase = true;
     console.log('✅ Supabase bağlantısı kuruldu');
+    
+    // Bağlantıyı test et
+    supabase.from('users').select('count', { count: 'exact', head: true })
+        .then(({ error }) => {
+            if (error) {
+                console.error('❌ Supabase bağlantı testi başarısız:', error.message);
+            } else {
+                console.log('✅ Supabase bağlantı testi başarılı');
+            }
+        })
+        .catch(err => {
+            console.error('❌ Supabase bağlantı testi hatası:', err.message);
+        });
 } else {
     console.log('⚠️ Supabase bilgileri bulunamadı, SQLite kullanılacak');
 }
@@ -697,7 +719,7 @@ const dbOperations = {
                     .select('id')
                     .eq('id', id)
                     .eq('organization_id', organizationId)
-                    .single();
+                    .maybeSingle();
 
                 if (!personel) {
                     throw new Error('Personel bulunamadı veya erişim yetkiniz yok');
@@ -1129,7 +1151,7 @@ const dbOperations = {
                 .select('*')
                 .eq('username', username)
                 .eq('is_active', true)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
             return data;
@@ -1154,7 +1176,7 @@ const dbOperations = {
                 .select('*')
                 .eq('id', userId)
                 .eq('is_active', true)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
             return data;
@@ -1204,7 +1226,7 @@ const dbOperations = {
                 .select('*')
                 .eq('invite_code', inviteCode)
                 .eq('is_active', true)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
             return data;
@@ -1498,7 +1520,7 @@ const dbOperations = {
                 .select('*')
                 .eq('id', organizationId)
                 .eq('is_active', true)
-                .single();
+                .maybeSingle();
 
             if (error) throw error;
             return data;
@@ -1873,8 +1895,22 @@ app.post('/api/auth/register', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Kayıt hatası:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('Kayıt hatası:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            stack: error.stack
+        });
+        
+        // Supabase hatalarını daha anlaşılır hale getir
+        if (error.code === 'PGRST116') {
+            res.status(400).json({ error: 'Veri bulunamadı veya oluşturulamadı' });
+        } else if (error.message && error.message.includes('violates not-null constraint')) {
+            res.status(400).json({ error: 'Gerekli alanlar eksik' });
+        } else {
+            res.status(500).json({ error: 'Sunucu hatası' });
+        }
     }
 });
 
@@ -1923,8 +1959,19 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Giriş hatası:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('Giriş hatası:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+        
+        // Supabase hatalarını daha anlaşılır hale getir
+        if (error.code === 'PGRST116') {
+            res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
+        } else {
+            res.status(500).json({ error: 'Sunucu hatası' });
+        }
     }
 });
 

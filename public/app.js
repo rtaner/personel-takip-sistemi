@@ -2592,9 +2592,9 @@ function openRoleChangeModal(userId, userName, currentRole) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Modal dışına tıklanınca kapat
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -2617,14 +2617,14 @@ async function saveRoleChange(userId) {
         showNotification('Lütfen bir rol seçin', 'error');
         return;
     }
-    
+
     try {
         const response = await fetch(`/api/organization/members/${userId}/role`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify({ role: selectedRole.value })
         });
-        
+
         if (response.ok) {
             showNotification('Kullanıcı rolü başarıyla güncellendi', 'success');
             closeRoleChangeModal();
@@ -2652,13 +2652,13 @@ async function deleteUser(userId, userName) {
     if (!confirm(`${userName} kullanıcısını organizasyondan çıkarmak istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
         return;
     }
-    
+
     try {
         const response = await fetch(`/api/organization/members/${userId}`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
-        
+
         if (response.ok) {
             showNotification('Kullanıcı başarıyla silindi', 'success');
             loadOrganizationUsers();

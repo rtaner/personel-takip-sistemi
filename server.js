@@ -3494,8 +3494,7 @@ app.get('/api/personel/:id/last-hr-analysis', authenticateToken, filterByOrganiz
         // Analiz verisini parse et
         const analysisData = useSupabase ? lastReport.analysis_data : JSON.parse(lastReport.analysis_data);
 
-        // Debug: Son analiz verisi tam içerik
-        console.log('📊 Son analiz verisi (ilk 2000 karakter):', JSON.stringify(analysisData, null, 2).substring(0, 2000));
+        // Debug temizlendi
 
         // Personel bilgilerini ekle - SUPABASE UYUMLU
         let personnelInfo;
@@ -3678,8 +3677,7 @@ app.get('/api/hr-analysis/:reportId', authenticateToken, async (req, res) => {
             console.log('❌ Executive summary yok! Tüm veri:', JSON.stringify(analysisData, null, 2));
         }
 
-        // Debug: Analiz verisinin tam içeriğini logla
-        console.log('📊 Analiz verisi tam içerik (ilk 2000 karakter):', JSON.stringify(analysisData, null, 2).substring(0, 2000));
+        // Debug temizlendi
 
         // Metadata'dan veri al (eğer varsa)
         const metadata = analysisData._metadata || {};

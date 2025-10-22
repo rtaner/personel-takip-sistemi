@@ -3642,6 +3642,21 @@ app.get('/api/hr-analysis/:reportId', authenticateToken, async (req, res) => {
         // Analiz verisini parse et
         const analysisData = useSupabase ? report.analysis_data : JSON.parse(report.analysis_data);
 
+        // Debug: Veri yapısını logla
+        console.log('🔍 Analiz verisi yapısı:', {
+            hasExecutiveSummary: !!analysisData.executive_summary,
+            hasManagerActionPlan: !!analysisData.manager_action_plan,
+            hasMetadata: !!analysisData._metadata,
+            keys: Object.keys(analysisData),
+            executiveSummaryKeys: analysisData.executive_summary ? Object.keys(analysisData.executive_summary) : 'yok',
+            managerActionPlanKeys: analysisData.manager_action_plan ? Object.keys(analysisData.manager_action_plan) : 'yok'
+        });
+
+        // Eğer executive_summary yoksa, tüm veriyi logla
+        if (!analysisData.executive_summary) {
+            console.log('❌ Executive summary yok! Tüm veri:', JSON.stringify(analysisData, null, 2));
+        }
+
         // Metadata'dan veri al (eğer varsa)
         const metadata = analysisData._metadata || {};
         const savedDataSummary = metadata.data_summary;

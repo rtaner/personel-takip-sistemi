@@ -780,7 +780,7 @@ const dbOperations = {
                 .from('notlar')
                 .select(`
                     *,
-                    created_by_user:users!notlar_created_by_fkey(username, full_name)
+                    users!created_by(username, full_name)
                 `)
                 .eq('personel_id', personelId);
 

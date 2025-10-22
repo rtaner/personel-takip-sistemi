@@ -788,7 +788,7 @@ const dbOperations = {
                 query = query.eq('organization_id', organizationId);
             }
 
-            const { data, error } = await query.order('tarih', { ascending: false });
+            const { data, error } = await query.order('created_at', { ascending: false });
 
             if (error) throw error;
             return data;

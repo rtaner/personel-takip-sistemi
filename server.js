@@ -3662,4 +3662,60 @@ app.delete('/api/organization/members/:userId', authenticateToken, requireRole([
         console.error('Kullanıcı silme hatası:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
     }
+});// Debug 
+endpoint - Supabase bağlantısını test et
+app.get('/api/test/supabase', async (req, res) => {
+    try {
+        console.log('Supabase test başlatılıyor...');
+        console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Var' : 'Yok');
+        console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'Var' : 'Yok');
+        console.log('useSupabase:', useSupabase);
+        
+        if (useSupabase) {
+            // Basit bir sorgu test et
+            const { data, error } = await supabase
+                .from('organizations')
+                .select('count')
+                .limit(1);
+                
+            if (error) {
+                console.error('Supabase test hatası:', error);
+                return res.status(500).json({ 
+                    error: 'Supabase bağlantı hatası', 
+                    details: error.message 
+                });
+            }
+            
+            res.json({ 
+                success: true, 
+                message: 'Supabase bağlantısı çalışıyor',
+                useSupabase: true,
+                data: data
+            });
+        } else {
+            res.json({ 
+                success: true, 
+                message: 'SQLite kullanılıyor',
+                useSupabase: false
+            });
+        }
+    } catch (error) {
+        console.error('Test endpoint hatası:', error);
+        res.status(500).json({ 
+            error: 'Test hatası', 
+            message: error.message 
+        });
+    }
+});
+
+// Debug endpoint - Environment variables kontrol
+app.get('/api/test/env', (req, res) => {
+    res.json({
+        NODE_ENV: process.env.NODE_ENV,
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY,
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        hasGeminiKey: !!process.env.GEMINI_API_KEY,
+        useSupabase: useSupabase
+    });
 });

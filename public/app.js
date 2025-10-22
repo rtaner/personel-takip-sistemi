@@ -1403,7 +1403,23 @@ async function showLastHRAnalysis() {
 
 // İK Analiz Sonucunu Modal'da Göster
 function showHRAnalysisModal(analysisResult) {
-    const { personnel_info, data_summary, hr_analysis, generated_at, generated_by } = analysisResult;
+    // Veri yapısını normalize et
+    const personnel_info = analysisResult.personnel_info || {};
+    const data_summary = analysisResult.data_summary || {
+        total_notes: 0,
+        positive_notes: 0,
+        negative_notes: 0,
+        performance_scores: 0
+    };
+    const hr_analysis = analysisResult.hr_analysis || {};
+    const executive_summary = hr_analysis.executive_summary || {
+        overall_risk_level: 'low',
+        key_concerns: [],
+        key_strengths: [],
+        immediate_action_required: false
+    };
+    const generated_at = analysisResult.generated_at;
+    const generated_by = analysisResult.generated_by;
 
     // Modal HTML oluştur
     const modalHTML = `
@@ -1432,24 +1448,24 @@ function showHRAnalysisModal(analysisResult) {
 
                     <div class="analysis-section">
                         <h3><i class="fas fa-exclamation-triangle"></i> Yönetici Özeti</h3>
-                        <div class="risk-level risk-${hr_analysis.executive_summary.overall_risk_level}">
-                            <strong>Genel Risk Seviyesi:</strong> ${getRiskLevelText(hr_analysis.executive_summary.overall_risk_level)}
+                        <div class="risk-level risk-${executive_summary.overall_risk_level}">
+                            <strong>Genel Risk Seviyesi:</strong> ${getRiskLevelText(executive_summary.overall_risk_level)}
                         </div>
                         <div class="concerns-strengths">
                             <div class="concerns">
                                 <h4>Ana Endişeler:</h4>
                                 <ul>
-                                    ${(hr_analysis.executive_summary.primary_concerns || []).map(concern => `<li>${concern}</li>`).join('')}
+                                    ${(executive_summary.primary_concerns || executive_summary.key_concerns || []).map(concern => `<li>${concern}</li>`).join('')}
                                 </ul>
                             </div>
                             <div class="strengths">
                                 <h4>Güçlü Yanlar:</h4>
                                 <ul>
-                                    ${(hr_analysis.executive_summary.key_strengths || []).map(strength => `<li>${strength}</li>`).join('')}
+                                    ${(executive_summary.key_strengths || []).map(strength => `<li>${strength}</li>`).join('')}
                                 </ul>
                             </div>
                         </div>
-                        ${hr_analysis.executive_summary.immediate_action_required ?
+                        ${executive_summary.immediate_action_required ?
             '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <strong>Acil Eylem Gerekli!</strong></div>' :
             '<div class="alert alert-success"><i class="fas fa-check-circle"></i> Rutin takip yeterli</div>'
         }
@@ -2564,10 +2580,10 @@ function showAnalysisHistoryModal(reports) {
                                 <div class="risk-level risk-${report.overall_risk_level}">
                                     ${report.overall_risk_level.toUpperCase()}
                                 </div>
-                                ${report.immediate_action_required ? 
-                                    '<div class="urgent-flag"><i class="fas fa-exclamation-triangle"></i> Acil Eylem Gerekli</div>' : 
-                                    ''
-                                }
+                                ${report.immediate_action_required ?
+            '<div class="urgent-flag"><i class="fas fa-exclamation-triangle"></i> Acil Eylem Gerekli</div>' :
+            ''
+        }
                                 <div class="created-by">
                                     <i class="fas fa-user"></i> ${report.created_by_name}
                                 </div>
@@ -2598,7 +2614,7 @@ async function loadSpecificAnalysis(reportId) {
         if (response.ok && result.success) {
             // Modal'ı kapat
             document.querySelector('.analysis-history-modal')?.closest('.modal-overlay')?.remove();
-            
+
             // Analizi göster
             showHRAnalysisModal(result);
         } else {

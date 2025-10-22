@@ -312,11 +312,15 @@ async function loadActivities(personelId) {
         const notes = await notesResponse.json();
         const tasks = await tasksResponse.json();
 
+        // Veri tiplerini kontrol et
+        const notesArray = Array.isArray(notes) ? notes : [];
+        const tasksArray = Array.isArray(tasks) ? tasks : [];
+
         // Tüm aktiviteleri birleştir ve tarihe göre sırala
         const activities = [];
 
         // Notları ekle
-        notes.forEach(note => {
+        notesArray.forEach(note => {
             activities.push({
                 type: 'note',
                 date: note.tarih,
@@ -328,10 +332,10 @@ async function loadActivities(personelId) {
         });
 
         // Görevleri ekle
-        tasks.forEach(task => {
+        tasksArray.forEach(task => {
             activities.push({
                 type: 'task',
-                date: task.atanma_tarihi,
+                date: task.created_at,
                 content: task.gorev_baslik,
                 description: task.gorev_aciklama,
                 status: task.durum,
@@ -1082,10 +1086,11 @@ async function loadMyWork() {
         }
 
         const tasks = await response.json();
+        const tasksArray = Array.isArray(tasks) ? tasks : [];
 
         container.innerHTML = '';
 
-        if (tasks.length === 0) {
+        if (tasksArray.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-briefcase"></i>
@@ -1102,7 +1107,7 @@ async function loadMyWork() {
             'tamamlandi': []
         };
 
-        tasks.forEach(task => {
+        tasksArray.forEach(task => {
             tasksByStatus[task.durum].push(task);
         });
 

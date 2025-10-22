@@ -257,7 +257,7 @@ if (supabaseUrl && supabaseKey) {
 const dbPath = process.env.DB_PATH || 'personel_takip.db';
 const db = new sqlite3.Database(dbPath);
 
-// SQLite tablolarını oluştur (sadece Supabase yoksa)
+// SQLite tablolarını oluştur
 if (!useSupabase) {
     db.serialize(() => {
         // Mevcut tablolar
@@ -404,8 +404,6 @@ if (!useSupabase) {
 
         console.log('✅ Auth tabloları ve indeksler oluşturuldu');
     });
-} else {
-    console.log('🗄️ Veritabanı: Supabase (PostgreSQL)');
 }
 
 // Mock İK Analizi (Test Amaçlı)
@@ -2386,44 +2384,14 @@ app.get('/api/personel/:id/export/:format', authenticateToken, filterByOrganizat
         personnel.telefon = personnel.telefon || 'Belirtilmemiş';
         personnel.email = personnel.email || 'Belirtilmemiş';
         personnel.pozisyon = personnel.pozisyon || 'Belirtilmemiş';
-        });
-
-        if (!personnel) {
-            return res.status(404).json({ error: 'Personel bulunamadı' });
-        }
 
 
 
         // Notları al
-        const notes = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT n.*, 'Sistem' as created_by_name
-                FROM notlar n
-                WHERE n.personel_id = ?
-                ORDER BY n.tarih DESC
-            `, [personnelId], (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            });
-        });
+        const notes = await dbOperations.getNotesByPersonelId(personnelId);
 
         // Görevleri al
-        const tasks = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT g.*, 
-                       'Sistem' as created_by_name,
-                       'Sistem' as assigned_to_name
-                FROM gorevler g
-                WHERE g.personel_id = ?
-                ORDER BY g.id DESC
-            `, [personnelId], (err, rows) => {
-                if (err) reject(err);
-                else {
-
-                    resolve(rows);
-                }
-            });
-        });
+        const tasks = await dbOperations.getTasksByPersonelId(personnelId);
 
         if (format === 'excel') {
             // Excel formatında export
@@ -3569,7 +3537,106 @@ app.get('/api/hr-analysis-reports', authenticateToken, filterByOrganization, asy
     }
 });
 
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server ${PORT} portunda çalışıyor`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`💾 Database: ${useSupabase ? 'Supabase (PostgreSQL)' : 'SQLite'}`);
+    console.log(`✅ Server başarıyla başlatıldı`);
+});
 
+// Kullanici rolunu guncelle (sadece organizasyon sahibi)
+app.put('/api/organization/members/:userId/role', authenticateToken, requireRole(['organizasyon_sahibi']), async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { role } = req.body;
+        
+        // Geçerli roller
+        const validRoles = ['personel', 'yonetici', 'organizasyon_sahibi'];
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({ error: 'Geçersiz rol' });
+        }
+        
+        // Kullanıcının aynı organizasyonda olduğunu kontrol et
+        const userCheck = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM users WHERE id = ? AND organization_id = ?', [userId, req.user.organizationId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        if (!userCheck) {
+            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+        }
+        
+        // Kendi rolünü değiştirmeye çalışıyor mu?
+        if (parseInt(userId) === req.user.id) {
+            return res.status(400).json({ error: 'Kendi rolünüzü değiştiremezsiniz' });
+        }
+        
+        // Rolü güncelle
+        await new Promise((resolve, reject) => {
+            db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], function(err) {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+        
+        res.json({
+            success: true,
+            message: 'Kullanıcı rolü başarıyla güncellendi'
+        });
+        
+    } catch (error) {
+        console.error('Rol güncelleme hatası:', error);
+        res.status(500).json({ error: 'Sunucu hatası' });
+    }
+});
+
+// Kullaniciyi organizasyondan cikar (sadece organizasyon sahibi)
+app.delete('/api/organization/members/:userId', authenticateToken, requireRole(['organizasyon_sahibi']), async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // Kullanıcının aynı organizasyonda olduğunu kontrol et
+        const userCheck = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM users WHERE id = ? AND organization_id = ?', [userId, req.user.organizationId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+        
+        if (!userCheck) {
+            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+        }
+        
+        // Kendi kendini silmeye çalışıyor mu?
+        if (parseInt(userId) === req.user.id) {
+            return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz' });
+        }
+        
+        // Organizasyon sahibini silmeye çalışıyor mu?
+        if (userCheck.role === 'organizasyon_sahibi') {
+            return res.status(400).json({ error: 'Organizasyon sahibi silinemez' });
+        }
+        
+        // Kullanıcıyı sil
+        await new Promise((resolve, reject) => {
+            db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+        
+        res.json({
+            success: true,
+            message: 'Kullanıcı başarıyla silindi'
+        });
+        
+    } catch (error) {
+        console.error('Kullanıcı silme hatası:', error);
+        res.status(500).json({ error: 'Sunucu hatası' });
+    }
+});
 
 // Debug endpoint - Supabase baglantisini test et
 app.get('/api/test/supabase', async (req, res) => {
@@ -3626,11 +3693,4 @@ app.get('/api/test/env', (req, res) => {
         hasGeminiKey: !!process.env.GEMINI_API_KEY,
         useSupabase: useSupabase
     });
-});/
-/ Server'ı başlat
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server ${PORT} portunda çalışıyor`);
-    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`💾 Database: ${useSupabase ? 'Supabase (PostgreSQL)' : 'SQLite'}`);
-    console.log(`✅ Server başarıyla başlatıldı`);
 });

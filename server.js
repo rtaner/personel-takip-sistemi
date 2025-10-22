@@ -634,10 +634,11 @@ const dbOperations = {
             const { data, error } = await supabase
                 .from('personel')
                 .insert([personelData])
-                .select();
+                .select()
+                .single();
 
             if (error) throw error;
-            return data[0];
+            return data;
         } else {
             return new Promise((resolve, reject) => {
                 const { ad, soyad, pozisyon, telefon, email, baslangic_tarihi, organization_id, created_by } = personelData;
@@ -799,10 +800,11 @@ const dbOperations = {
             const { data, error } = await supabase
                 .from('notlar')
                 .insert([noteData])
-                .select();
+                .select()
+                .single();
 
             if (error) throw error;
-            return data[0];
+            return data;
         } else {
             return new Promise((resolve, reject) => {
                 const { personel_id, not_metni, kategori, created_by, organization_id } = noteData;
@@ -956,10 +958,11 @@ const dbOperations = {
             const { data, error } = await supabase
                 .from('gorevler')
                 .insert([taskData])
-                .select();
+                .select()
+                .single();
 
             if (error) throw error;
-            return data[0];
+            return data;
         } else {
             return new Promise((resolve, reject) => {
                 const { personel_id, gorev_baslik, gorev_aciklama, bitis_tarihi, created_by, assigned_to, organization_id } = taskData;

@@ -612,6 +612,14 @@ function setupSpeechRecognition() {
             voiceBtn.innerHTML = '<i class="fas fa-stop"></i> Dur';
             voiceBtn.classList.add('recording');
         }
+
+        // Kullanıcıya bilgi ver
+        const voiceStatus = document.getElementById('voice-status');
+        if (voiceStatus) {
+            voiceStatus.textContent = 'Dinleniyor... Konuşun';
+            voiceStatus.style.color = '#28a745';
+        }
+
         console.log('Ses tanıma başladı...');
     };
 
@@ -620,11 +628,25 @@ function setupSpeechRecognition() {
         const transcript = event.results[0][0].transcript;
         console.log('Tanınan metin:', transcript);
 
-        // Not textarea'sına metni ekle
-        const noteTextarea = document.getElementById('note-text');
+        // Not textarea'sını bul
+        const noteTextarea = document.getElementById('not-metni');
+        console.log('Textarea bulundu mu?', !!noteTextarea);
+        console.log('Mevcut textarea değeri:', noteTextarea?.value);
+
         if (noteTextarea) {
             const currentText = noteTextarea.value;
-            noteTextarea.value = currentText + (currentText ? ' ' : '') + transcript;
+            const newText = currentText + (currentText ? ' ' : '') + transcript;
+            noteTextarea.value = newText;
+
+            console.log('Yeni metin:', newText);
+
+            // Kullanıcıya geri bildirim ver
+            showNotification('Ses metne çevrildi: ' + transcript, 'success');
+        } else {
+            console.error('Not textarea bulunamadı - ID: not-metni');
+            // Tüm textarea'ları listele
+            const allTextareas = document.querySelectorAll('textarea');
+            console.log('Sayfadaki tüm textarea\'lar:', allTextareas);
         }
     };
 
@@ -637,6 +659,15 @@ function setupSpeechRecognition() {
             voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> Sesli Not';
             voiceBtn.classList.remove('recording');
         }
+
+        // Hata mesajını göster
+        const voiceStatus = document.getElementById('voice-status');
+        if (voiceStatus) {
+            voiceStatus.textContent = 'Hata: ' + event.error;
+            voiceStatus.style.color = '#dc3545';
+        }
+
+        showNotification('Ses tanıma hatası: ' + event.error, 'error');
     };
 
     // Ses tanıma bittiğinde
@@ -647,6 +678,13 @@ function setupSpeechRecognition() {
             voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> Sesli Not';
             voiceBtn.classList.remove('recording');
         }
+
+        // Status temizle
+        const voiceStatus = document.getElementById('voice-status');
+        if (voiceStatus) {
+            voiceStatus.textContent = '';
+        }
+
         console.log('Ses tanıma bitti');
     };
 }

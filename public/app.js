@@ -1418,6 +1418,33 @@ function showHRAnalysisModal(analysisResult) {
         key_strengths: [],
         immediate_action_required: false
     };
+    const manager_action_plan = hr_analysis.manager_action_plan || {
+        immediate_actions: [],
+        short_term_actions: [],
+        long_term_actions: [],
+        coaching_plan: [],
+        monitoring_plan: {
+            daily_checks: [],
+            weekly_reviews: [],
+            monthly_evaluation: []
+        }
+    };
+    const competency_analysis = hr_analysis.competency_analysis || {};
+    const behavioral_insights = hr_analysis.behavioral_insights || {
+        patterns: [],
+        recommendations: []
+    };
+    const business_impact = hr_analysis.business_impact || {
+        current_impact: 'Değerlendirilmedi',
+        potential_risks: [],
+        cost_implications: 'Değerlendirilmedi',
+        team_morale_effect: 'Değerlendirilmedi'
+    };
+    const follow_up_schedule = hr_analysis.follow_up_schedule || {
+        next_review_date: 'Belirlenmedi',
+        review_frequency: 'Belirlenmedi',
+        success_indicators: []
+    };
     const generated_at = analysisResult.generated_at;
     const generated_by = analysisResult.generated_by;
 
@@ -1474,10 +1501,10 @@ function showHRAnalysisModal(analysisResult) {
                     <div class="analysis-section">
                         <h3><i class="fas fa-tasks"></i> Mağaza Müdürü İçin Eylem Planı</h3>
                         
-                        ${hr_analysis.manager_action_plan.immediate_actions.length > 0 ? `
+                        ${manager_action_plan.immediate_actions.length > 0 ? `
                         <div class="action-group">
                             <h4><i class="fas fa-bolt"></i> Acil Eylemler</h4>
-                            ${(hr_analysis.manager_action_plan.immediate_actions || []).map(action => `
+                            ${(manager_action_plan.immediate_actions || []).map(action => `
                                 <div class="action-item priority-${action.priority}">
                                     <div class="action-header">
                                         <strong>${action.action}</strong>
@@ -1493,10 +1520,10 @@ function showHRAnalysisModal(analysisResult) {
                         </div>
                         ` : ''}
 
-                        ${hr_analysis.manager_action_plan.coaching_plan.length > 0 ? `
+                        ${(manager_action_plan.coaching_plan || []).length > 0 ? `
                         <div class="action-group">
                             <h4><i class="fas fa-chalkboard-teacher"></i> Koçluk Planı</h4>
-                            ${(hr_analysis.manager_action_plan.coaching_plan || []).map(coaching => `
+                            ${(manager_action_plan.coaching_plan || []).map(coaching => `
                                 <div class="coaching-item">
                                     <strong>${coaching.area}</strong> - ${coaching.method} (${coaching.duration})
                                     <div class="success-metrics">
@@ -1512,15 +1539,15 @@ function showHRAnalysisModal(analysisResult) {
                             <div class="monitoring-grid">
                                 <div>
                                     <strong>Günlük Kontroller:</strong>
-                                    <ul>${(hr_analysis.manager_action_plan.monitoring_plan.daily_checks || []).map(check => `<li>${check}</li>`).join('')}</ul>
+                                    <ul>${((manager_action_plan.monitoring_plan || {}).daily_checks || []).map(check => `<li>${check}</li>`).join('')}</ul>
                                 </div>
                                 <div>
                                     <strong>Haftalık Gözden Geçirme:</strong>
-                                    <ul>${(hr_analysis.manager_action_plan.monitoring_plan.weekly_reviews || []).map(review => `<li>${review}</li>`).join('')}</ul>
+                                    <ul>${((manager_action_plan.monitoring_plan || {}).weekly_reviews || []).map(review => `<li>${review}</li>`).join('')}</ul>
                                 </div>
                                 <div>
                                     <strong>Aylık Değerlendirme:</strong>
-                                    <ul>${(hr_analysis.manager_action_plan.monitoring_plan.monthly_evaluation || []).map(eval => `<li>${eval}</li>`).join('')}</ul>
+                                    <ul>${((manager_action_plan.monitoring_plan || {}).monthly_evaluation || []).map(eval => `<li>${eval}</li>`).join('')}</ul>
                                 </div>
                             </div>
                         </div>
@@ -1529,19 +1556,19 @@ function showHRAnalysisModal(analysisResult) {
                     <div class="analysis-section">
                         <h3><i class="fas fa-chart-line"></i> İş Etkisi</h3>
                         <div class="business-impact">
-                            <div><strong>Mevcut Etki:</strong> ${hr_analysis.business_impact.current_impact}</div>
-                            <div><strong>Potansiyel Riskler:</strong> ${hr_analysis.business_impact.potential_risks.join(', ')}</div>
-                            <div><strong>Maliyet Etkileri:</strong> ${hr_analysis.business_impact.cost_implications}</div>
-                            <div><strong>Takım Morali:</strong> ${hr_analysis.business_impact.team_morale_effect}</div>
+                            <div><strong>Mevcut Etki:</strong> ${business_impact.current_impact}</div>
+                            <div><strong>Potansiyel Riskler:</strong> ${business_impact.potential_risks.join(', ')}</div>
+                            <div><strong>Maliyet Etkileri:</strong> ${business_impact.cost_implications}</div>
+                            <div><strong>Takım Morali:</strong> ${business_impact.team_morale_effect}</div>
                         </div>
                     </div>
 
                     <div class="analysis-section">
                         <h3><i class="fas fa-calendar-check"></i> Takip Programı</h3>
                         <div class="follow-up-info">
-                            <div><strong>Sonraki İnceleme:</strong> ${hr_analysis.follow_up_schedule.next_review_date}</div>
-                            <div><strong>İnceleme Sıklığı:</strong> ${hr_analysis.follow_up_schedule.review_frequency}</div>
-                            <div><strong>Başarı Göstergeleri:</strong> ${hr_analysis.follow_up_schedule.success_indicators.join(', ')}</div>
+                            <div><strong>Sonraki İnceleme:</strong> ${follow_up_schedule.next_review_date}</div>
+                            <div><strong>İnceleme Sıklığı:</strong> ${follow_up_schedule.review_frequency}</div>
+                            <div><strong>Başarı Göstergeleri:</strong> ${follow_up_schedule.success_indicators.join(', ')}</div>
                         </div>
                     </div>
                 </div>

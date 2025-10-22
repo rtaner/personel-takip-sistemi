@@ -316,6 +316,12 @@ Sadece JSON formatında cevap ver, başka açıklama ekleme.
   }
 
   convertToOldFormat(newFormat) {
+    // Debug: Gelen formatı logla
+    console.log('🔄 AI Format dönüştürme - Gelen keys:', Object.keys(newFormat));
+    console.log('🔄 Executive summary var mı:', !!newFormat.executive_summary);
+    console.log('🔄 HR recommendations var mı:', !!newFormat.hr_recommendations);
+    console.log('🔄 Business impact var mı:', !!newFormat.business_impact_analysis);
+    
     // Yeni AI formatını frontend'in beklediği eski formata dönüştür
     const safeExecutiveSummary = newFormat.executive_summary || {};
 
@@ -387,6 +393,82 @@ Sadece JSON formatında cevap ver, başka açıklama ekleme.
         success_indicators: newFormat.action_timeline?.this_week || ["Gelişim takibi"]
       }
     };
+
+    // Debug: Dönüştürülmüş formatı logla
+    const result = {
+      executive_summary: {
+        overall_risk_level: safeExecutiveSummary.overall_risk_level || "medium",
+        primary_concerns: Array.isArray(safeExecutiveSummary.primary_concerns) ? safeExecutiveSummary.primary_concerns : ["Analiz hatası"],
+        key_strengths: Array.isArray(safeExecutiveSummary.key_strengths) ? safeExecutiveSummary.key_strengths : ["Manuel inceleme gerekli"],
+        immediate_action_required: safeExecutiveSummary.immediate_action_required !== undefined ? safeExecutiveSummary.immediate_action_required : true
+      },
+      behavioral_analysis: newFormat.behavioral_category_analysis ? {
+        work_discipline: {
+          score: this.riskToScore(newFormat.behavioral_category_analysis.work_discipline?.risk_assessment),
+          risk_level: newFormat.behavioral_category_analysis.work_discipline?.risk_assessment || "medium",
+          evidence: newFormat.behavioral_category_analysis.work_discipline?.evidence || [],
+          pattern: "stable"
+        },
+        corporate_culture: {
+          score: this.riskToScore(newFormat.behavioral_category_analysis.corporate_culture?.risk_assessment),
+          risk_level: newFormat.behavioral_category_analysis.corporate_culture?.risk_assessment || "medium",
+          evidence: newFormat.behavioral_category_analysis.corporate_culture?.evidence || [],
+          pattern: "stable"
+        },
+        basic_rules: {
+          score: this.riskToScore(newFormat.behavioral_category_analysis.basic_rules?.risk_assessment),
+          risk_level: newFormat.behavioral_category_analysis.basic_rules?.risk_assessment || "medium",
+          evidence: newFormat.behavioral_category_analysis.basic_rules?.evidence || [],
+          pattern: "stable"
+        },
+        performance: {
+          score: this.riskToScore(newFormat.behavioral_category_analysis.performance_focus?.risk_assessment),
+          risk_level: newFormat.behavioral_category_analysis.performance_focus?.risk_assessment || "medium",
+          evidence: newFormat.behavioral_category_analysis.performance_focus?.evidence || [],
+          pattern: "stable"
+        }
+      } : {
+        work_discipline: { score: 3, risk_level: "medium", evidence: [], pattern: "stable" },
+        corporate_culture: { score: 3, risk_level: "medium", evidence: [], pattern: "stable" },
+        basic_rules: { score: 3, risk_level: "medium", evidence: [], pattern: "stable" },
+        performance: { score: 3, risk_level: "medium", evidence: [], pattern: "stable" }
+      },
+      competency_scores: newFormat.competency_assessment || {
+        communication: { score: 3, confidence: 0.5, reasoning: "Analiz eksik", chain_effect: "Bilinmiyor" },
+        teamwork: { score: 3, confidence: 0.5, reasoning: "Analiz eksik", chain_effect: "Bilinmiyor" },
+        problem_solving: { score: 3, confidence: 0.5, reasoning: "Analiz eksik", chain_effect: "Bilinmiyor" },
+        customer_focus: { score: 3, confidence: 0.5, reasoning: "Analiz eksik", chain_effect: "Bilinmiyor" },
+        reliability: { score: 3, confidence: 0.5, reasoning: "Analiz eksik", chain_effect: "Bilinmiyor" }
+      },
+      manager_action_plan: {
+        immediate_actions: this.convertCriticalActions(newFormat.hr_recommendations?.priority_1_critical || []),
+        coaching_plan: Array.isArray(newFormat.hr_recommendations?.priority_2_coaching) ? newFormat.hr_recommendations.priority_2_coaching : [],
+        monitoring_plan: this.safeMonitoringPlan(newFormat.hr_recommendations?.priority_3_monitoring),
+        escalation_triggers: Array.isArray(newFormat.hr_recommendations?.priority_3_monitoring?.escalation_triggers) ? newFormat.hr_recommendations.priority_3_monitoring.escalation_triggers : []
+      },
+      business_impact: newFormat.business_impact_analysis ? {
+        current_impact: newFormat.business_impact_analysis.current_performance_impact || "Bilinmiyor",
+        potential_risks: [newFormat.business_impact_analysis.team_morale_risk, newFormat.business_impact_analysis.reputation_risk].filter(Boolean),
+        cost_implications: newFormat.business_impact_analysis.cost_implications || "Bilinmiyor",
+        team_morale_effect: newFormat.business_impact_analysis.team_morale_risk || "medium"
+      } : {
+        current_impact: "Bilinmiyor",
+        potential_risks: [],
+        cost_implications: "Bilinmiyor",
+        team_morale_effect: "medium"
+      },
+      follow_up_schedule: {
+        next_review_date: "1 hafta içinde",
+        review_frequency: "Haftalık",
+        success_indicators: newFormat.action_timeline?.this_week || ["Gelişim takibi"]
+      }
+    };
+
+    console.log('✅ Dönüştürülmüş format keys:', Object.keys(result));
+    console.log('✅ Manager action plan var mı:', !!result.manager_action_plan);
+    console.log('✅ Business impact var mı:', !!result.business_impact);
+
+    return result;
   }
 
   riskToScore(riskLevel) {

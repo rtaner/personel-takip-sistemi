@@ -3310,23 +3310,17 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
             console.log('🤖 Executive summary keys:', hrAnalysis.executive_summary ? Object.keys(hrAnalysis.executive_summary) : 'yok');
             console.log('🤖 Manager action plan keys:', hrAnalysis.manager_action_plan ? Object.keys(hrAnalysis.manager_action_plan) : 'yok');
             
-            // Eğer manager_action_plan yoksa mock kullan
+            // Tam veriyi logla (ilk 1000 karakter)
+            console.log('🤖 Gemini tam response (ilk kısım):', JSON.stringify(hrAnalysis, null, 2).substring(0, 1000));
+            
+            // Eğer manager_action_plan yoksa uyar ama mock kullanma
             if (!hrAnalysis.manager_action_plan || !hrAnalysis.business_impact) {
-                console.log('⚠️ Gemini API eksik veri döndürdü, mock ile tamamlanıyor');
-                const mockAnalysis = generateMockHRAnalysis(personnelData);
-                
-                console.log('🔧 Mock analysis keys:', Object.keys(mockAnalysis));
-                console.log('🔧 Mock manager_action_plan keys:', mockAnalysis.manager_action_plan ? Object.keys(mockAnalysis.manager_action_plan) : 'yok');
-                
-                hrAnalysis = {
-                    ...hrAnalysis,
-                    manager_action_plan: hrAnalysis.manager_action_plan || mockAnalysis.manager_action_plan,
-                    business_impact: hrAnalysis.business_impact || mockAnalysis.business_impact,
-                    follow_up_schedule: hrAnalysis.follow_up_schedule || mockAnalysis.follow_up_schedule
-                };
-                
-                console.log('✅ Tamamlanmış analiz keys:', Object.keys(hrAnalysis));
-                console.log('✅ Final manager_action_plan keys:', hrAnalysis.manager_action_plan ? Object.keys(hrAnalysis.manager_action_plan) : 'yok');
+                console.log('⚠️ Gemini API eksik veri döndürdü!');
+                console.log('❌ Eksik bölümler:', {
+                    manager_action_plan: !hrAnalysis.manager_action_plan,
+                    business_impact: !hrAnalysis.business_impact,
+                    follow_up_schedule: !hrAnalysis.follow_up_schedule
+                });
             }
         } catch (error) {
             console.log('⚠️ Gemini API hatası, mock analiz kullanılıyor:', error.message);
@@ -3499,6 +3493,20 @@ app.get('/api/personel/:id/last-hr-analysis', authenticateToken, filterByOrganiz
 
         // Analiz verisini parse et
         const analysisData = useSupabase ? lastReport.analysis_data : JSON.parse(lastReport.analysis_data);
+
+        // Eğer manager_action_plan yoksa mock ile tamamla
+        if (!analysisData.manager_action_plan || !analysisData.business_impact) {
+            console.log('🔧 Son analizde eksik veri tespit edildi, mock ile tamamlanıyor...');
+            const mockAnalysis = generateMockHRAnalysis({ personnelInfo: {}, notes: [], performanceScores: [] });
+            
+            analysisData.manager_action_plan = analysisData.manager_action_plan || mockAnalysis.manager_action_plan;
+            analysisData.business_impact = analysisData.business_impact || mockAnalysis.business_impact;
+            analysisData.follow_up_schedule = analysisData.follow_up_schedule || mockAnalysis.follow_up_schedule;
+            analysisData.behavioral_analysis = analysisData.behavioral_analysis || mockAnalysis.behavioral_analysis;
+            analysisData.competency_scores = analysisData.competency_scores || mockAnalysis.competency_scores;
+            
+            console.log('✅ Son analiz mock ile tamamlandı');
+        }
 
         // Personel bilgilerini ekle - SUPABASE UYUMLU
         let personnelInfo;
@@ -3679,6 +3687,20 @@ app.get('/api/hr-analysis/:reportId', authenticateToken, async (req, res) => {
         // Eğer executive_summary yoksa, tüm veriyi logla
         if (!analysisData.executive_summary) {
             console.log('❌ Executive summary yok! Tüm veri:', JSON.stringify(analysisData, null, 2));
+        }
+
+        // Eğer manager_action_plan yoksa mock ile tamamla
+        if (!analysisData.manager_action_plan || !analysisData.business_impact) {
+            console.log('🔧 Eksik veri tespit edildi, mock ile tamamlanıyor...');
+            const mockAnalysis = generateMockHRAnalysis({ personnelInfo: {}, notes: [], performanceScores: [] });
+            
+            analysisData.manager_action_plan = analysisData.manager_action_plan || mockAnalysis.manager_action_plan;
+            analysisData.business_impact = analysisData.business_impact || mockAnalysis.business_impact;
+            analysisData.follow_up_schedule = analysisData.follow_up_schedule || mockAnalysis.follow_up_schedule;
+            analysisData.behavioral_analysis = analysisData.behavioral_analysis || mockAnalysis.behavioral_analysis;
+            analysisData.competency_scores = analysisData.competency_scores || mockAnalysis.competency_scores;
+            
+            console.log('✅ Mock ile tamamlandı');
         }
 
         // Metadata'dan veri al (eğer varsa)

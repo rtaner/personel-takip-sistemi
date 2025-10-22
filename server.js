@@ -258,7 +258,7 @@ if (process.env.USE_SUPABASE === 'true' && supabaseUrl && supabaseKey) {
     supabase = createClient(supabaseUrl, supabaseKey);
     useSupabase = true;
     console.log('✅ Supabase bağlantısı kuruldu');
-    
+
     // Bağlantıyı test et
     supabase.from('users').select('count', { count: 'exact', head: true })
         .then(({ error }) => {
@@ -1902,7 +1902,7 @@ app.post('/api/auth/register', async (req, res) => {
             hint: error.hint,
             stack: error.stack
         });
-        
+
         // Supabase hatalarını daha anlaşılır hale getir
         if (error.code === 'PGRST116') {
             res.status(400).json({ error: 'Veri bulunamadı veya oluşturulamadı' });
@@ -1965,7 +1965,7 @@ app.post('/api/auth/login', async (req, res) => {
             details: error.details,
             hint: error.hint
         });
-        
+
         // Supabase hatalarını daha anlaşılır hale getir
         if (error.code === 'PGRST116') {
             res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
@@ -2072,7 +2072,7 @@ app.get('/api/organization/stats', authenticateToken, requireRole(['organizasyon
     try {
         // Supabase bağlantısını kontrol et
         if (!useSupabase) {
-            return res.status(503).json({ 
+            return res.status(503).json({
                 error: 'Veritabanı bağlantısı mevcut değil',
                 message: 'Lütfen sistem yöneticisi ile iletişime geçin'
             });
@@ -2101,7 +2101,7 @@ app.get('/api/organization/stats', authenticateToken, requireRole(['organizasyon
             hint: error.hint,
             organizationId: req.user?.organizationId
         });
-        
+
         // Supabase hatalarını daha anlaşılır hale getir
         if (error.code === 'PGRST116') {
             res.status(404).json({ error: 'Organizasyon bulunamadı' });
@@ -2443,7 +2443,7 @@ app.get('/api/personel/:id/export/:format', authenticateToken, filterByOrganizat
         if (!personnel) {
             return res.status(404).json({ error: 'Personel bulunamadı' });
         }
-        
+
         // Eksik alanları tamamla
         personnel.ad_soyad = `${personnel.ad || ''} ${personnel.soyad || ''}`.trim();
         personnel.departman = personnel.pozisyon || 'Belirtilmemiş';
@@ -3042,7 +3042,7 @@ app.get('/api/my-tasks', authenticateToken, filterByOrganization, async (req, re
                 );
             }
         });
-        
+
         res.json(tasks);
     } catch (error) {
         console.error('Kullanıcı görevleri getirme hatası:', error);
@@ -3147,84 +3147,149 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
     try {
         const personnelId = req.params.id;
 
-        // Personel bilgilerini al - VERİTABANI UYUMLU
-        const personnelInfo = await new Promise((resolve, reject) => {
-            db.get(`
-                SELECT p.*, 
-                       COALESCE(o.name, 'Bilinmiyor') as organizasyon_adi
-                FROM personel p
-                LEFT JOIN organizations o ON p.organization_id = o.id
-                WHERE p.id = ?
-            `, [personnelId], (err, row) => {
-                if (err) {
-                    // Eğer JOIN hatası alırsak, basit sorgu yap
-                    db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err2, row2) => {
-                        if (err2) reject(err2);
-                        else {
-                            if (row2) {
-                                row2.organizasyon_adi = 'Bilinmiyor';
+        // Personel bilgilerini al - SUPABASE UYUMLU
+        let personnelInfo;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('personel')
+                .select(`
+                    *,
+                    organizations!organization_id(name)
+                `)
+                .eq('id', personnelId)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            if (data) {
+                personnelInfo = {
+                    ...data,
+                    organizasyon_adi: data.organizations?.name || 'Bilinmiyor'
+                };
+            }
+        } else {
+            // SQLite fallback
+            personnelInfo = await new Promise((resolve, reject) => {
+                db.get(`
+                    SELECT p.*, 
+                           COALESCE(o.name, 'Bilinmiyor') as organizasyon_adi
+                    FROM personel p
+                    LEFT JOIN organizations o ON p.organization_id = o.id
+                    WHERE p.id = ?
+                `, [personnelId], (err, row) => {
+                    if (err) {
+                        // Eğer JOIN hatası alırsak, basit sorgu yap
+                        db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err2, row2) => {
+                            if (err2) reject(err2);
+                            else {
+                                if (row2) {
+                                    row2.organizasyon_adi = 'Bilinmiyor';
+                                }
+                                resolve(row2);
                             }
-                            resolve(row2);
-                        }
-                    });
-                } else {
-                    resolve(row);
-                }
+                        });
+                    } else {
+                        resolve(row);
+                    }
+                });
             });
-        });
+        }
 
         if (!personnelInfo) {
             return res.status(404).json({ error: 'Personel bulunamadı' });
         }
 
-        // Tüm notları al - VERİTABANI UYUMLU
-        const notes = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT n.id, n.personel_id, n.not_metni, n.tarih, 
-                       COALESCE(n.kategori, 'genel') as kategori,
-                       COALESCE(u.full_name, u.username, 'Sistem') as created_by_name
-                FROM notlar n
-                LEFT JOIN users u ON n.created_by = u.id
-                WHERE n.personel_id = ?
-                ORDER BY n.tarih DESC
-            `, [personnelId], (err, rows) => {
-                if (err) {
-                    // Eğer JOIN hatası alırsak, basit sorgu yap
-                    db.all(`
-                        SELECT id, personel_id, not_metni, tarih, 
-                               COALESCE(kategori, 'genel') as kategori,
-                               'Sistem' as created_by_name
-                        FROM notlar 
-                        WHERE personel_id = ?
-                        ORDER BY tarih DESC
-                    `, [personnelId], (err2, rows2) => {
-                        if (err2) reject(err2);
-                        else resolve(rows2 || []);
-                    });
-                } else {
-                    resolve(rows || []);
-                }
-            });
-        });
+        // Tüm notları al - SUPABASE UYUMLU
+        let notes;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('notlar')
+                .select(`
+                    id, personel_id, not_metni, tarih, kategori,
+                    users!created_by(full_name, username)
+                `)
+                .eq('personel_id', personnelId)
+                .order('created_at', { ascending: false });
 
-        // Performans puanlarını al - VERİTABANI UYUMLU (gorevler tablosundan)
-        const performanceScores = await new Promise((resolve, reject) => {
-            db.all(`
-                SELECT gorev_baslik as gorev_adi, 
-                       COALESCE(performans_puani, 3) as puan, 
-                       created_at as tarih
-                FROM gorevler
-                WHERE personel_id = ? AND performans_puani IS NOT NULL
-                ORDER BY created_at DESC
-            `, [personnelId], (err, rows) => {
-                if (err) {
-                    console.log('Performans puanları alınamadı:', err.message);
-                    resolve([]); // Hata durumunda boş array döndür
-                } else {
-                    resolve(rows || []);
-                }
+            if (error) throw error;
+
+            notes = (data || []).map(note => ({
+                ...note,
+                kategori: note.kategori || 'genel',
+                created_by_name: note.users?.full_name || note.users?.username || 'Sistem'
+            }));
+        } else {
+            // SQLite fallback
+            notes = await new Promise((resolve, reject) => {
+                db.all(`
+                    SELECT n.id, n.personel_id, n.not_metni, n.tarih, 
+                           COALESCE(n.kategori, 'genel') as kategori,
+                           COALESCE(u.full_name, u.username, 'Sistem') as created_by_name
+                    FROM notlar n
+                    LEFT JOIN users u ON n.created_by = u.id
+                    WHERE n.personel_id = ?
+                    ORDER BY n.tarih DESC
+                `, [personnelId], (err, rows) => {
+                    if (err) {
+                        // Eğer JOIN hatası alırsak, basit sorgu yap
+                        db.all(`
+                            SELECT id, personel_id, not_metni, tarih, 
+                                   COALESCE(kategori, 'genel') as kategori,
+                                   'Sistem' as created_by_name
+                            FROM notlar 
+                            WHERE personel_id = ?
+                            ORDER BY tarih DESC
+                        `, [personnelId], (err2, rows2) => {
+                            if (err2) reject(err2);
+                            else resolve(rows2 || []);
+                        });
+                    } else {
+                        resolve(rows || []);
+                    }
+                });
             });
-        });
+        }
+
+        // Performans puanlarını al - SUPABASE UYUMLU (gorevler tablosundan)
+        let performanceScores;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('gorevler')
+                .select('gorev_baslik, performans_puani, created_at')
+                .eq('personel_id', personnelId)
+                .not('performans_puani', 'is', null)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.log('Performans puanları alınamadı:', error.message);
+                performanceScores = [];
+            } else {
+                performanceScores = (data || []).map(item => ({
+                    gorev_adi: item.gorev_baslik,
+                    puan: item.performans_puani || 3,
+                    tarih: item.created_at
+                }));
+            }
+        } else {
+            // SQLite fallback
+            performanceScores = await new Promise((resolve, reject) => {
+                db.all(`
+                    SELECT gorev_baslik as gorev_adi, 
+                           COALESCE(performans_puani, 3) as puan, 
+                           created_at as tarih
+                    FROM gorevler
+                    WHERE personel_id = ? AND performans_puani IS NOT NULL
+                    ORDER BY created_at DESC
+                `, [personnelId], (err, rows) => {
+                    if (err) {
+                        console.log('Performans puanları alınamadı:', err.message);
+                        resolve([]); // Hata durumunda boş array döndür
+                    } else {
+                        resolve(rows || []);
+                    }
+                });
+            });
+        }
 
         // Gemini API ile kapsamlı analiz yap
         const personnelData = {
@@ -3246,27 +3311,46 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
         }
 
         // Analiz sonucunu veritabanına kaydet
-        const analysisId = await new Promise((resolve, reject) => {
-            db.run(`
-                INSERT INTO hr_analysis_reports (
-                    personel_id, 
-                    analysis_data, 
-                    overall_risk_level,
-                    immediate_action_required,
-                    created_at,
-                    created_by
-                ) VALUES (?, ?, ?, ?, datetime('now'), ?)
-            `, [
-                personnelId,
-                JSON.stringify(hrAnalysis),
-                hrAnalysis.executive_summary.overall_risk_level,
-                hrAnalysis.executive_summary.immediate_action_required ? 1 : 0,
-                req.user.id
-            ], function (err) {
-                if (err) reject(err);
-                else resolve(this.lastID);
+        let analysisId;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('hr_analysis_reports')
+                .insert([{
+                    personel_id: personnelId,
+                    analysis_data: hrAnalysis,
+                    overall_risk_level: hrAnalysis.executive_summary.overall_risk_level,
+                    immediate_action_required: hrAnalysis.executive_summary.immediate_action_required,
+                    created_by: req.user.id
+                }])
+                .select('id')
+                .single();
+
+            if (error) throw error;
+            analysisId = data.id;
+        } else {
+            // SQLite fallback
+            analysisId = await new Promise((resolve, reject) => {
+                db.run(`
+                    INSERT INTO hr_analysis_reports (
+                        personel_id, 
+                        analysis_data, 
+                        overall_risk_level,
+                        immediate_action_required,
+                        created_at,
+                        created_by
+                    ) VALUES (?, ?, ?, ?, datetime('now'), ?)
+                `, [
+                    personnelId,
+                    JSON.stringify(hrAnalysis),
+                    hrAnalysis.executive_summary.overall_risk_level,
+                    hrAnalysis.executive_summary.immediate_action_required ? 1 : 0,
+                    req.user.id
+                ], function (err) {
+                    if (err) reject(err);
+                    else resolve(this.lastID);
+                });
             });
-        });
+        }
 
         console.log(`✅ İK analizi tamamlandı. Rapor ID: ${analysisId}`);
 
@@ -3329,20 +3413,44 @@ app.get('/api/personel/:id/last-hr-analysis', authenticateToken, filterByOrganiz
     try {
         const personnelId = req.params.id;
 
-        // Son analiz raporunu getir
-        const lastReport = await new Promise((resolve, reject) => {
-            db.get(`
-                SELECT har.*, p.ad || ' ' || p.soyad as personel_adi
-                FROM hr_analysis_reports har
-                JOIN personel p ON har.personel_id = p.id
-                WHERE har.personel_id = ?
-                ORDER BY har.created_at DESC
-                LIMIT 1
-            `, [personnelId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+        // Son analiz raporunu getir - SUPABASE UYUMLU
+        let lastReport;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('hr_analysis_reports')
+                .select(`
+                    *,
+                    personel!personel_id(ad, soyad)
+                `)
+                .eq('personel_id', personnelId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            if (data) {
+                lastReport = {
+                    ...data,
+                    personel_adi: `${data.personel.ad} ${data.personel.soyad}`
+                };
+            }
+        } else {
+            // SQLite fallback
+            lastReport = await new Promise((resolve, reject) => {
+                db.get(`
+                    SELECT har.*, p.ad || ' ' || p.soyad as personel_adi
+                    FROM hr_analysis_reports har
+                    JOIN personel p ON har.personel_id = p.id
+                    WHERE har.personel_id = ?
+                    ORDER BY har.created_at DESC
+                    LIMIT 1
+                `, [personnelId], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
             });
-        });
+        }
 
         if (!lastReport) {
             return res.json({
@@ -3352,15 +3460,28 @@ app.get('/api/personel/:id/last-hr-analysis', authenticateToken, filterByOrganiz
         }
 
         // Analiz verisini parse et
-        const analysisData = JSON.parse(lastReport.analysis_data);
+        const analysisData = useSupabase ? lastReport.analysis_data : JSON.parse(lastReport.analysis_data);
 
-        // Personel bilgilerini ekle
-        const personnelInfo = await new Promise((resolve, reject) => {
-            db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+        // Personel bilgilerini ekle - SUPABASE UYUMLU
+        let personnelInfo;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('personel')
+                .select('*')
+                .eq('id', personnelId)
+                .maybeSingle();
+
+            if (error) throw error;
+            personnelInfo = data;
+        } else {
+            // SQLite fallback
+            personnelInfo = await new Promise((resolve, reject) => {
+                db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
             });
-        });
+        }
 
         // Orijinal format ile uyumlu hale getir
         const formattedResult = {
@@ -3616,13 +3737,13 @@ app.put('/api/organization/members/:userId/role', authenticateToken, requireRole
     try {
         const { userId } = req.params;
         const { role } = req.body;
-        
+
         // Geçerli roller
         const validRoles = ['personel', 'yonetici', 'organizasyon_sahibi'];
         if (!validRoles.includes(role)) {
             return res.status(400).json({ error: 'Geçersiz rol' });
         }
-        
+
         // Kullanıcının aynı organizasyonda olduğunu kontrol et
         if (useSupabase) {
             const { data: userCheck, error: checkError } = await supabase
@@ -3631,24 +3752,24 @@ app.put('/api/organization/members/:userId/role', authenticateToken, requireRole
                 .eq('id', userId)
                 .eq('organization_id', req.user.organizationId)
                 .maybeSingle();
-                
+
             if (checkError) throw checkError;
-            
+
             if (!userCheck) {
                 return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
             }
-            
+
             // Kendi rolünü değiştirmeye çalışıyor mu?
             if (parseInt(userId) === req.user.id) {
                 return res.status(400).json({ error: 'Kendi rolünüzü değiştiremezsiniz' });
             }
-            
+
             // Rolü güncelle
             const { error: updateError } = await supabase
                 .from('users')
                 .update({ role })
                 .eq('id', userId);
-                
+
             if (updateError) throw updateError;
         } else {
             // SQLite fallback
@@ -3658,30 +3779,30 @@ app.put('/api/organization/members/:userId/role', authenticateToken, requireRole
                     else resolve(row);
                 });
             });
-            
+
             if (!userCheck) {
                 return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
             }
-            
+
             // Kendi rolünü değiştirmeye çalışıyor mu?
             if (parseInt(userId) === req.user.id) {
                 return res.status(400).json({ error: 'Kendi rolünüzü değiştiremezsiniz' });
             }
-            
+
             // Rolü güncelle
             await new Promise((resolve, reject) => {
-                db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], function(err) {
+                db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], function (err) {
                     if (err) reject(err);
                     else resolve();
                 });
             });
         }
-        
+
         res.json({
             success: true,
             message: 'Kullanıcı rolü başarıyla güncellendi'
         });
-        
+
     } catch (error) {
         console.error('Rol güncelleme hatası:', {
             message: error.message,
@@ -3691,7 +3812,7 @@ app.put('/api/organization/members/:userId/role', authenticateToken, requireRole
             userId: userId,
             organizationId: req.user.organizationId
         });
-        
+
         // Supabase hatalarını daha anlaşılır hale getir
         if (error.code === 'PGRST116') {
             res.status(404).json({ error: 'Kullanıcı bulunamadı' });
@@ -3705,7 +3826,7 @@ app.put('/api/organization/members/:userId/role', authenticateToken, requireRole
 app.delete('/api/organization/members/:userId', authenticateToken, requireRole(['organizasyon_sahibi']), async (req, res) => {
     try {
         const { userId } = req.params;
-        
+
         // Kullanıcının aynı organizasyonda olduğunu kontrol et
         const userCheck = await new Promise((resolve, reject) => {
             db.get('SELECT * FROM users WHERE id = ? AND organization_id = ?', [userId, req.user.organizationId], (err, row) => {
@@ -3713,34 +3834,34 @@ app.delete('/api/organization/members/:userId', authenticateToken, requireRole([
                 else resolve(row);
             });
         });
-        
+
         if (!userCheck) {
             return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
         }
-        
+
         // Kendi kendini silmeye çalışıyor mu?
         if (parseInt(userId) === req.user.id) {
             return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz' });
         }
-        
+
         // Organizasyon sahibini silmeye çalışıyor mu?
         if (userCheck.role === 'organizasyon_sahibi') {
             return res.status(400).json({ error: 'Organizasyon sahibi silinemez' });
         }
-        
+
         // Kullanıcıyı sil
         await new Promise((resolve, reject) => {
-            db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+            db.run('DELETE FROM users WHERE id = ?', [userId], function (err) {
                 if (err) reject(err);
                 else resolve();
             });
         });
-        
+
         res.json({
             success: true,
             message: 'Kullanıcı başarıyla silindi'
         });
-        
+
     } catch (error) {
         console.error('Kullanıcı silme hatası:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
@@ -3754,40 +3875,40 @@ app.get('/api/test/supabase', async (req, res) => {
         console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Var' : 'Yok');
         console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'Var' : 'Yok');
         console.log('useSupabase:', useSupabase);
-        
+
         if (useSupabase) {
             // Basit bir sorgu test et
             const { data, error } = await supabase
                 .from('organizations')
                 .select('count')
                 .limit(1);
-                
+
             if (error) {
                 console.error('Supabase test hatası:', error);
-                return res.status(500).json({ 
-                    error: 'Supabase bağlantı hatası', 
-                    details: error.message 
+                return res.status(500).json({
+                    error: 'Supabase bağlantı hatası',
+                    details: error.message
                 });
             }
-            
-            res.json({ 
-                success: true, 
+
+            res.json({
+                success: true,
                 message: 'Supabase baglantisi calisiyor',
                 useSupabase: true,
                 data: data
             });
         } else {
-            res.json({ 
-                success: true, 
+            res.json({
+                success: true,
                 message: 'SQLite kullaniliyor',
                 useSupabase: false
             });
         }
     } catch (error) {
         console.error('Test endpoint hatası:', error);
-        res.status(500).json({ 
-            error: 'Test hatası', 
-            message: error.message 
+        res.status(500).json({
+            error: 'Test hatası',
+            message: error.message
         });
     }
 });

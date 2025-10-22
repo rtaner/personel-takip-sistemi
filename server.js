@@ -3570,13 +3570,6 @@ app.get('/api/hr-analysis-reports', authenticateToken, filterByOrganization, asy
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server ${PORT} portunda çalışıyor`);
-    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`💾 Database: ${useSupabase ? 'Supabase (PostgreSQL)' : 'SQLite'}`);
-    console.log(`✅ Server başarıyla başlatıldı`);
-});
-
 // Kullanici rolunu guncelle (sadece organizasyon sahibi)
 app.put('/api/organization/members/:userId/role', authenticateToken, requireRole(['organizasyon_sahibi']), async (req, res) => {
     try {
@@ -3726,4 +3719,11 @@ app.get('/api/test/env', (req, res) => {
         hasGeminiKey: !!process.env.GEMINI_API_KEY,
         useSupabase: useSupabase
     });
+});/
+/ Server'ı başlat
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server ${PORT} portunda çalışıyor`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`💾 Database: ${useSupabase ? 'Supabase (PostgreSQL)' : 'SQLite'}`);
+    console.log(`✅ Server başarıyla başlatıldı`);
 });

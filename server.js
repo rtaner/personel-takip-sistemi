@@ -3662,11 +3662,12 @@ app.delete('/api/organization/members/:userId', authenticateToken, requireRole([
         console.error('Kullanıcı silme hatası:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
     }
-});// Debug 
-endpoint - Supabase bağlantısını test et
+});
+
+// Debug endpoint - Supabase baglantisini test et
 app.get('/api/test/supabase', async (req, res) => {
     try {
-        console.log('Supabase test başlatılıyor...');
+        console.log('Supabase test baslatiliyor...');
         console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Var' : 'Yok');
         console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'Var' : 'Yok');
         console.log('useSupabase:', useSupabase);
@@ -3688,14 +3689,14 @@ app.get('/api/test/supabase', async (req, res) => {
             
             res.json({ 
                 success: true, 
-                message: 'Supabase bağlantısı çalışıyor',
+                message: 'Supabase baglantisi calisiyor',
                 useSupabase: true,
                 data: data
             });
         } else {
             res.json({ 
                 success: true, 
-                message: 'SQLite kullanılıyor',
+                message: 'SQLite kullaniliyor',
                 useSupabase: false
             });
         }

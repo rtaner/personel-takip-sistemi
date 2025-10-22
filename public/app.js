@@ -1417,7 +1417,17 @@ function showHRAnalysisModal(analysisResult) {
         negative_notes: 0,
         performance_scores: 0
     };
-    const hr_analysis = analysisResult.hr_analysis || {};
+    // hr_analysis string ise parse et
+    let hr_analysis = analysisResult.hr_analysis || {};
+    if (typeof hr_analysis === 'string') {
+        try {
+            hr_analysis = JSON.parse(hr_analysis);
+            console.log('✅ HR Analysis JSON parse edildi');
+        } catch (error) {
+            console.error('❌ HR Analysis JSON parse hatası:', error);
+            hr_analysis = {};
+        }
+    }
     const executive_summary = hr_analysis.executive_summary || {
         overall_risk_level: 'low',
         key_concerns: [],

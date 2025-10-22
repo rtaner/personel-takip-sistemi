@@ -3624,29 +3624,58 @@ app.put('/api/organization/members/:userId/role', authenticateToken, requireRole
         }
         
         // Kullanıcının aynı organizasyonda olduğunu kontrol et
-        const userCheck = await new Promise((resolve, reject) => {
-            db.get('SELECT * FROM users WHERE id = ? AND organization_id = ?', [userId, req.user.organizationId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+        if (useSupabase) {
+            const { data: userCheck, error: checkError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .eq('organization_id', req.user.organizationId)
+                .maybeSingle();
+                
+            if (checkError) throw checkError;
+            
+            if (!userCheck) {
+                return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+            }
+            
+            // Kendi rolünü değiştirmeye çalışıyor mu?
+            if (parseInt(userId) === req.user.id) {
+                return res.status(400).json({ error: 'Kendi rolünüzü değiştiremezsiniz' });
+            }
+            
+            // Rolü güncelle
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ role })
+                .eq('id', userId);
+                
+            if (updateError) throw updateError;
+        } else {
+            // SQLite fallback
+            const userCheck = await new Promise((resolve, reject) => {
+                db.get('SELECT * FROM users WHERE id = ? AND organization_id = ?', [userId, req.user.organizationId], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
             });
-        });
-        
-        if (!userCheck) {
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
-        }
-        
-        // Kendi rolünü değiştirmeye çalışıyor mu?
-        if (parseInt(userId) === req.user.id) {
-            return res.status(400).json({ error: 'Kendi rolünüzü değiştiremezsiniz' });
-        }
-        
-        // Rolü güncelle
-        await new Promise((resolve, reject) => {
-            db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], function(err) {
-                if (err) reject(err);
-                else resolve();
+            
+            if (!userCheck) {
+                return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+            }
+            
+            // Kendi rolünü değiştirmeye çalışıyor mu?
+            if (parseInt(userId) === req.user.id) {
+                return res.status(400).json({ error: 'Kendi rolünüzü değiştiremezsiniz' });
+            }
+            
+            // Rolü güncelle
+            await new Promise((resolve, reject) => {
+                db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], function(err) {
+                    if (err) reject(err);
+                    else resolve();
+                });
             });
-        });
+        }
         
         res.json({
             success: true,
@@ -3654,8 +3683,21 @@ app.put('/api/organization/members/:userId/role', authenticateToken, requireRole
         });
         
     } catch (error) {
-        console.error('Rol güncelleme hatası:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('Rol güncelleme hatası:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            userId: userId,
+            organizationId: req.user.organizationId
+        });
+        
+        // Supabase hatalarını daha anlaşılır hale getir
+        if (error.code === 'PGRST116') {
+            res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+        } else {
+            res.status(500).json({ error: 'Rol güncellenirken hata oluştu' });
+        }
     }
 });
 

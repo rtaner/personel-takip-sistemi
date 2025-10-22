@@ -253,13 +253,12 @@ if (supabaseUrl && supabaseKey) {
     console.log('⚠️ Supabase bilgileri bulunamadı, SQLite kullanılacak');
 }
 
-// SQLite veritabanı (sadece Supabase yoksa)
-let db = null;
+// SQLite veritabanı (fallback)
+const dbPath = process.env.DB_PATH || 'personel_takip.db';
+const db = new sqlite3.Database(dbPath);
+
+// SQLite tablolarını oluştur (sadece Supabase yoksa)
 if (!useSupabase) {
-    const dbPath = process.env.DB_PATH || 'personel_takip.db';
-    db = new sqlite3.Database(dbPath);
-    
-    // SQLite tablolarını oluştur
     db.serialize(() => {
         // Mevcut tablolar
         db.run(`CREATE TABLE IF NOT EXISTS personel (
@@ -3570,99 +3569,7 @@ app.get('/api/hr-analysis-reports', authenticateToken, filterByOrganization, asy
     }
 });
 
-// Kullanici rolunu guncelle (sadece organizasyon sahibi)
-app.put('/api/organization/members/:userId/role', authenticateToken, requireRole(['organizasyon_sahibi']), async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const { role } = req.body;
-        
-        // Geçerli roller
-        const validRoles = ['personel', 'yonetici', 'organizasyon_sahibi'];
-        if (!validRoles.includes(role)) {
-            return res.status(400).json({ error: 'Geçersiz rol' });
-        }
-        
-        // Kullanıcının aynı organizasyonda olduğunu kontrol et
-        const userCheck = await new Promise((resolve, reject) => {
-            db.get('SELECT * FROM users WHERE id = ? AND organization_id = ?', [userId, req.user.organizationId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-        
-        if (!userCheck) {
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
-        }
-        
-        // Kendi rolünü değiştirmeye çalışıyor mu?
-        if (parseInt(userId) === req.user.id) {
-            return res.status(400).json({ error: 'Kendi rolünüzü değiştiremezsiniz' });
-        }
-        
-        // Rolü güncelle
-        await new Promise((resolve, reject) => {
-            db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], function(err) {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-        
-        res.json({
-            success: true,
-            message: 'Kullanıcı rolü başarıyla güncellendi'
-        });
-        
-    } catch (error) {
-        console.error('Rol güncelleme hatası:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
-    }
-});
 
-// Kullaniciyi organizasyondan cikar (sadece organizasyon sahibi)
-app.delete('/api/organization/members/:userId', authenticateToken, requireRole(['organizasyon_sahibi']), async (req, res) => {
-    try {
-        const { userId } = req.params;
-        
-        // Kullanıcının aynı organizasyonda olduğunu kontrol et
-        const userCheck = await new Promise((resolve, reject) => {
-            db.get('SELECT * FROM users WHERE id = ? AND organization_id = ?', [userId, req.user.organizationId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-        
-        if (!userCheck) {
-            return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
-        }
-        
-        // Kendi kendini silmeye çalışıyor mu?
-        if (parseInt(userId) === req.user.id) {
-            return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz' });
-        }
-        
-        // Organizasyon sahibini silmeye çalışıyor mu?
-        if (userCheck.role === 'organizasyon_sahibi') {
-            return res.status(400).json({ error: 'Organizasyon sahibi silinemez' });
-        }
-        
-        // Kullanıcıyı sil
-        await new Promise((resolve, reject) => {
-            db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-        
-        res.json({
-            success: true,
-            message: 'Kullanıcı başarıyla silindi'
-        });
-        
-    } catch (error) {
-        console.error('Kullanıcı silme hatası:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
-    }
-});
 
 // Debug endpoint - Supabase baglantisini test et
 app.get('/api/test/supabase', async (req, res) => {

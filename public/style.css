@@ -597,6 +597,109 @@ header p {
     100% { transform: scale(1); }
 }
 
+/* Analiz Geçmişi Modal */
+.analysis-history-modal {
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.analysis-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.analysis-history-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.analysis-history-item:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.analysis-date {
+    font-weight: bold;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+.analysis-date i {
+    margin-right: 8px;
+    color: #007bff;
+}
+
+.analysis-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+    margin-left: 15px;
+}
+
+.risk-level {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    width: fit-content;
+}
+
+.risk-level.risk-low {
+    background: #d4edda;
+    color: #155724;
+}
+
+.risk-level.risk-medium {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.risk-level.risk-high {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.urgent-flag {
+    color: #dc3545;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.urgent-flag i {
+    margin-right: 5px;
+}
+
+.created-by {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.created-by i {
+    margin-right: 5px;
+}
+
+.analysis-actions {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.analysis-actions i {
+    margin-right: 5px;
+}
+
 /* Forms */
 .form-container {
     background: #f8f9fa;

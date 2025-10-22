@@ -2418,9 +2418,11 @@ function updateAIAnalysisButtons() {
 
     const generateBtn = document.getElementById('generate-ai-analysis-btn');
     const showBtn = document.getElementById('show-last-ai-analysis-btn');
+    const historyBtn = document.getElementById('show-analysis-history-btn');
 
     if (generateBtn) generateBtn.disabled = !selectedPersonelId;
     if (showBtn) showBtn.disabled = !selectedPersonelId;
+    if (historyBtn) historyBtn.disabled = !selectedPersonelId;
 }
 
 // AI analiz oluştur (dashboard'dan)
@@ -2503,6 +2505,108 @@ async function showLastAIAnalysis() {
     } catch (error) {
         console.error('Son analiz getirme hatası:', error);
         showNotification('Son analiz getirilirken hata oluştu.', 'error');
+    }
+}
+
+// Analiz Geçmişini Göster
+async function showAnalysisHistory() {
+    const select = document.getElementById('ai-analysis-personel-select');
+    const selectedPersonelId = select.value;
+
+    if (!selectedPersonelId) {
+        showNotification('Lütfen önce bir personel seçin.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/personel/${selectedPersonelId}/hr-analysis-history`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            showAnalysisHistoryModal(result.reports);
+        } else {
+            showNotification('Analiz geçmişi getirilemedi.', 'error');
+        }
+    } catch (error) {
+        console.error('Analiz geçmişi getirme hatası:', error);
+        showNotification('Analiz geçmişi getirilirken hata oluştu.', 'error');
+    }
+}
+
+// Analiz Geçmişi Modal'ını Göster
+function showAnalysisHistoryModal(reports) {
+    if (!reports || reports.length === 0) {
+        showNotification('Bu personel için analiz geçmişi bulunamadı.', 'info');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content analysis-history-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-history"></i> İK Analizi Geçmişi</h3>
+                <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="analysis-history-list">
+                    ${reports.map(report => `
+                        <div class="analysis-history-item" onclick="loadSpecificAnalysis(${report.id})">
+                            <div class="analysis-date">
+                                <i class="fas fa-calendar"></i>
+                                ${new Date(report.created_at).toLocaleString('tr-TR')}
+                            </div>
+                            <div class="analysis-info">
+                                <div class="risk-level risk-${report.overall_risk_level}">
+                                    ${report.overall_risk_level.toUpperCase()}
+                                </div>
+                                ${report.immediate_action_required ? 
+                                    '<div class="urgent-flag"><i class="fas fa-exclamation-triangle"></i> Acil Eylem Gerekli</div>' : 
+                                    ''
+                                }
+                                <div class="created-by">
+                                    <i class="fas fa-user"></i> ${report.created_by_name}
+                                </div>
+                            </div>
+                            <div class="analysis-actions">
+                                <i class="fas fa-eye"></i> Görüntüle
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+// Belirli Bir Analizi Yükle
+async function loadSpecificAnalysis(reportId) {
+    try {
+        const response = await fetch(`/api/hr-analysis/${reportId}`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            // Modal'ı kapat
+            document.querySelector('.analysis-history-modal')?.closest('.modal-overlay')?.remove();
+            
+            // Analizi göster
+            showHRAnalysisModal(result);
+        } else {
+            showNotification('Analiz yüklenemedi.', 'error');
+        }
+    } catch (error) {
+        console.error('Analiz yükleme hatası:', error);
+        showNotification('Analiz yüklenirken hata oluştu.', 'error');
     }
 }
 

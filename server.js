@@ -3316,10 +3316,10 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
             const { data, error } = await supabase
                 .from('hr_analysis_reports')
                 .insert([{
-                    personel_id: personnelId,
+                    personel_id: parseInt(personnelId),
                     analysis_data: hrAnalysis,
                     overall_risk_level: hrAnalysis.executive_summary.overall_risk_level,
-                    immediate_action_required: hrAnalysis.executive_summary.immediate_action_required,
+                    immediate_action_required: hrAnalysis.executive_summary.immediate_action_required ? 1 : 0,
                     created_by: req.user.id
                 }])
                 .select('id')
@@ -3630,7 +3630,14 @@ app.get('/api/hr-analysis/:reportId', authenticateToken, async (req, res) => {
             personnel_info: {
                 id: report.personel_id,
                 name: useSupabase ? `${report.personel.ad} ${report.personel.soyad}` : `${report.ad} ${report.soyad}`,
-                position: useSupabase ? report.personel.pozisyon : report.pozisyon
+                position: useSupabase ? report.personel.pozisyon : report.pozisyon,
+                organization: 'Bilinmiyor' // Organizasyon bilgisi eksik, gerekirse eklenebilir
+            },
+            data_summary: {
+                total_notes: 0, // Bu veriler analiz sırasında hesaplanmış olmalı
+                positive_notes: 0,
+                negative_notes: 0,
+                performance_scores: 0
             },
             hr_analysis: analysisData,
             generated_at: report.created_at,

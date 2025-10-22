@@ -1099,10 +1099,11 @@ const dbOperations = {
             const { data, error } = await supabase
                 .from('users')
                 .insert([userData])
-                .select();
+                .select()
+                .single();
 
             if (error) throw error;
-            return data[0];
+            return data;
         } else {
             return new Promise((resolve, reject) => {
                 const { username, password_hash, full_name, organization_id, role } = userData;
@@ -1173,10 +1174,11 @@ const dbOperations = {
             const { data, error } = await supabase
                 .from('organizations')
                 .insert([orgData])
-                .select();
+                .select()
+                .single();
 
             if (error) throw error;
-            return data[0];
+            return data;
         } else {
             return new Promise((resolve, reject) => {
                 const { name, invite_code, owner_id } = orgData;

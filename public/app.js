@@ -2530,19 +2530,26 @@ async function showLastAIAnalysis() {
     }
 
     try {
+        console.log('🔍 Son analiz getiriliyor, personel ID:', selectedPersonelId);
+
         const response = await fetch(`/api/personel/${selectedPersonelId}/last-hr-analysis`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
 
+        console.log('📡 Son analiz response status:', response.status);
+
         const result = await response.json();
+        console.log('📊 Son analiz response data:', result);
 
         if (response.ok && result.success && result.analysis) {
+            console.log('✅ Son analiz gösteriliyor');
             // Son analizi göster
             showHRAnalysisModal(result.analysis);
             // Bellekte sakla
             window.lastHRAnalysis = result.analysis;
         } else {
+            console.error('❌ Son analiz bulunamadı:', result);
             showNotification('Bu personel için henüz İK analizi yapılmamış.\n\n"İK Analizi Yap" butonuna tıklayarak yeni bir analiz oluşturun.', 'info');
         }
     } catch (error) {
@@ -2631,20 +2638,27 @@ function showAnalysisHistoryModal(reports) {
 // Belirli Bir Analizi Yükle
 async function loadSpecificAnalysis(reportId) {
     try {
+        console.log('🔍 Analiz yükleniyor, ID:', reportId);
+
         const response = await fetch(`/api/hr-analysis/${reportId}`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
 
+        console.log('📡 Response status:', response.status);
+
         const result = await response.json();
+        console.log('📊 Response data:', result);
 
         if (response.ok && result.success) {
             // Modal'ı kapat
             document.querySelector('.analysis-history-modal')?.closest('.modal-overlay')?.remove();
 
+            console.log('✅ Analiz gösteriliyor');
             // Analizi göster
             showHRAnalysisModal(result);
         } else {
+            console.error('❌ Analiz yüklenemedi:', result);
             showNotification('Analiz yüklenemedi.', 'error');
         }
     } catch (error) {

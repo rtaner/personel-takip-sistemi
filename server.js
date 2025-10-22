@@ -253,12 +253,13 @@ if (supabaseUrl && supabaseKey) {
     console.log('⚠️ Supabase bilgileri bulunamadı, SQLite kullanılacak');
 }
 
-// SQLite veritabanı (fallback)
-const dbPath = process.env.DB_PATH || 'personel_takip.db';
-const db = new sqlite3.Database(dbPath);
-
-// SQLite tablolarını oluştur
+// SQLite veritabanı (sadece Supabase yoksa)
+let db = null;
 if (!useSupabase) {
+    const dbPath = process.env.DB_PATH || 'personel_takip.db';
+    db = new sqlite3.Database(dbPath);
+    
+    // SQLite tablolarını oluştur
     db.serialize(() => {
         // Mevcut tablolar
         db.run(`CREATE TABLE IF NOT EXISTS personel (
@@ -404,6 +405,8 @@ if (!useSupabase) {
 
         console.log('✅ Auth tabloları ve indeksler oluşturuldu');
     });
+} else {
+    console.log('🗄️ Veritabanı: Supabase (PostgreSQL)');
 }
 
 // Mock İK Analizi (Test Amaçlı)
@@ -1773,10 +1776,12 @@ console.log(`🔗 Supabase URL: ${process.env.SUPABASE_URL ? 'Configured ✅' : 
 // Kullanıcı Kaydı
 app.post('/api/auth/register', async (req, res) => {
     try {
+        console.log('🔥 Kayit islemi basladi:', req.body);
         const { username, password, fullName, inviteCode } = req.body;
 
         // Validasyon
         if (!username || !password || !fullName) {
+            console.log('❌ Validasyon hatasi: Eksik alanlar');
             return res.status(400).json({ error: 'Tüm alanlar gerekli' });
         }
 
@@ -1785,13 +1790,17 @@ app.post('/api/auth/register', async (req, res) => {
         }
 
         // Kullanıcı adı kontrolü
+        console.log('🔍 Kullanici adi kontrolu:', username);
         const existingUser = await dbOperations.getUserByUsername(username);
         if (existingUser) {
+            console.log('❌ Kullanici adi zaten var:', username);
             return res.status(409).json({ error: 'Bu kullanıcı adı zaten kullanımda' });
         }
 
         // Şifreyi hash'le
+        console.log('🔐 Sifre hashleniyor...');
         const passwordHash = await hashPassword(password);
+        console.log('✅ Sifre hashlendi');
 
         let organizationId = null;
         let role = 'organizasyon_sahibi'; // İlk kullanıcı organizasyon sahibi
@@ -1807,6 +1816,7 @@ app.post('/api/auth/register', async (req, res) => {
         }
 
         // Kullanıcı oluştur
+        console.log('👤 Kullanici olusturuluyor:', { username, fullName, organizationId, role });
         const newUser = await dbOperations.createUser({
             username,
             password_hash: passwordHash,
@@ -1814,6 +1824,7 @@ app.post('/api/auth/register', async (req, res) => {
             organization_id: organizationId,
             role
         });
+        console.log('✅ Kullanici olusturuldu:', newUser.id);
 
         // Eğer davet kodu yoksa (ilk kullanıcı), organizasyon oluştur
         if (!inviteCode) {
@@ -2364,22 +2375,18 @@ app.get('/api/personel/:id/export/:format', authenticateToken, filterByOrganizat
         const format = req.params.format; // 'excel' veya 'pdf'
 
         // Personel bilgilerini al
-        const personnel = await new Promise((resolve, reject) => {
-            db.get('SELECT * FROM personel WHERE id = ?', [personnelId], (err, row) => {
-                if (err) reject(err);
-                else {
-                    // Eksik alanları tamamla
-                    if (row) {
-                        row.ad_soyad = `${row.ad || ''} ${row.soyad || ''}`.trim();
-                        row.departman = row.pozisyon || 'Belirtilmemiş';
-                        row.ise_baslama = row.baslangic_tarihi || '-';
-                        row.telefon = row.telefon || 'Belirtilmemiş';
-                        row.email = row.email || 'Belirtilmemiş';
-                        row.pozisyon = row.pozisyon || 'Belirtilmemiş';
-                    }
-                    resolve(row);
-                }
-            });
+        const personnel = await dbOperations.getPersonelById(personnelId);
+        if (!personnel) {
+            return res.status(404).json({ error: 'Personel bulunamadı' });
+        }
+        
+        // Eksik alanları tamamla
+        personnel.ad_soyad = `${personnel.ad || ''} ${personnel.soyad || ''}`.trim();
+        personnel.departman = personnel.pozisyon || 'Belirtilmemiş';
+        personnel.ise_baslama = personnel.baslangic_tarihi || '-';
+        personnel.telefon = personnel.telefon || 'Belirtilmemiş';
+        personnel.email = personnel.email || 'Belirtilmemiş';
+        personnel.pozisyon = personnel.pozisyon || 'Belirtilmemiş';
         });
 
         if (!personnel) {

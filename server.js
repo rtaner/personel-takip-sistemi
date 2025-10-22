@@ -2070,6 +2070,14 @@ app.put('/api/organization/member/:id/role', authenticateToken, requireRole(['or
 // Organizasyon istatistiklerini getir
 app.get('/api/organization/stats', authenticateToken, requireRole(['organizasyon_sahibi', 'yonetici']), async (req, res) => {
     try {
+        // Supabase bağlantısını kontrol et
+        if (!useSupabase) {
+            return res.status(503).json({ 
+                error: 'Veritabanı bağlantısı mevcut değil',
+                message: 'Lütfen sistem yöneticisi ile iletişime geçin'
+            });
+        }
+
         const stats = await dbOperations.getOrganizationStats(req.user.organizationId);
 
         // Organizasyon bilgilerini de ekle
@@ -2086,8 +2094,20 @@ app.get('/api/organization/stats', authenticateToken, requireRole(['organizasyon
             stats
         });
     } catch (error) {
-        console.error('İstatistik getirme hatası:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('İstatistik getirme hatası:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            organizationId: req.user?.organizationId
+        });
+        
+        // Supabase hatalarını daha anlaşılır hale getir
+        if (error.code === 'PGRST116') {
+            res.status(404).json({ error: 'Organizasyon bulunamadı' });
+        } else {
+            res.status(500).json({ error: 'İstatistikler yüklenirken hata oluştu' });
+        }
     }
 });
 

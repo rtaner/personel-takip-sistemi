@@ -1403,6 +1403,12 @@ async function showLastHRAnalysis() {
 
 // İK Analiz Sonucunu Modal'da Göster
 function showHRAnalysisModal(analysisResult) {
+    // Debug: Frontend'e gelen veriyi logla
+    console.log('🎨 Frontend - Gelen analiz verisi:', analysisResult);
+    console.log('🎨 HR Analysis keys:', analysisResult.hr_analysis ? Object.keys(analysisResult.hr_analysis) : 'yok');
+    console.log('🎨 Manager action plan var mı:', !!(analysisResult.hr_analysis && analysisResult.hr_analysis.manager_action_plan));
+    console.log('🎨 Business impact var mı:', !!(analysisResult.hr_analysis && analysisResult.hr_analysis.business_impact));
+
     // Veri yapısını normalize et
     const personnel_info = analysisResult.personnel_info || {};
     const data_summary = analysisResult.data_summary || {
@@ -1447,6 +1453,10 @@ function showHRAnalysisModal(analysisResult) {
     };
     const generated_at = analysisResult.generated_at;
     const generated_by = analysisResult.generated_by;
+
+    // Debug: Normalize edilmiş verileri logla
+    console.log('🎨 Manager action plan (normalize sonrası):', manager_action_plan);
+    console.log('🎨 Business impact (normalize sonrası):', business_impact);
 
     // Modal HTML oluştur
     const modalHTML = `

@@ -309,7 +309,7 @@ if (!useSupabase) {
             personel_id INTEGER,
             gorev_baslik TEXT NOT NULL,
             gorev_aciklama TEXT,
-            atanma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             bitis_tarihi DATE,
             durum TEXT DEFAULT 'beklemede',
             performans_puani INTEGER,
@@ -943,7 +943,7 @@ const dbOperations = {
                 query = query.eq('organization_id', organizationId);
             }
 
-            const { data, error } = await query.order('atanma_tarihi', { ascending: false });
+            const { data, error } = await query.order('created_at', { ascending: false });
 
             if (error) throw error;
             return data;
@@ -965,7 +965,7 @@ const dbOperations = {
                     params.push(organizationId);
                 }
 
-                sql += ' ORDER BY g.atanma_tarihi DESC';
+                sql += ' ORDER BY g.created_at DESC';
 
                 db.all(sql, params, (err, rows) => {
                     if (err) reject(err);
@@ -2744,7 +2744,7 @@ app.get('/api/organization/my-tasks', authenticateToken, async (req, res) => {
                 `)
                 .eq('assigned_to', userId)
                 .eq('organization_id', organizationId)
-                .order('atanma_tarihi', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             res.json(data);
@@ -2755,7 +2755,7 @@ app.get('/api/organization/my-tasks', authenticateToken, async (req, res) => {
                 FROM gorevler g 
                 LEFT JOIN personel p ON g.personel_id = p.id 
                 WHERE g.assigned_to = ? AND g.organization_id = ? 
-                ORDER BY g.atanma_tarihi DESC
+                ORDER BY g.created_at DESC
             `, [userId, organizationId], (err, rows) => {
                 if (err) {
                     console.error('Görevler getirme hatası:', err);
@@ -3033,7 +3033,7 @@ app.get('/api/my-tasks', authenticateToken, filterByOrganization, async (req, re
                      FROM gorevler g 
                      LEFT JOIN personel p ON g.personel_id = p.id 
                      WHERE g.assigned_to = ? AND g.organization_id = ?
-                     ORDER BY g.atanma_tarihi DESC`,
+                     ORDER BY g.created_at DESC`,
                     [req.user.id, req.organizationId],
                     (err, rows) => {
                         if (err) reject(err);
@@ -3212,10 +3212,10 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
             db.all(`
                 SELECT gorev_baslik as gorev_adi, 
                        COALESCE(performans_puani, 3) as puan, 
-                       atanma_tarihi as tarih
+                       created_at as tarih
                 FROM gorevler
                 WHERE personel_id = ? AND performans_puani IS NOT NULL
-                ORDER BY atanma_tarihi DESC
+                ORDER BY created_at DESC
             `, [personnelId], (err, rows) => {
                 if (err) {
                     console.log('Performans puanları alınamadı:', err.message);

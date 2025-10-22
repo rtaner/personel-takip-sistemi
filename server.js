@@ -3494,19 +3494,8 @@ app.get('/api/personel/:id/last-hr-analysis', authenticateToken, filterByOrganiz
         // Analiz verisini parse et
         const analysisData = useSupabase ? lastReport.analysis_data : JSON.parse(lastReport.analysis_data);
 
-        // Eğer manager_action_plan yoksa mock ile tamamla
-        if (!analysisData.manager_action_plan || !analysisData.business_impact) {
-            console.log('🔧 Son analizde eksik veri tespit edildi, mock ile tamamlanıyor...');
-            const mockAnalysis = generateMockHRAnalysis({ personnelInfo: {}, notes: [], performanceScores: [] });
-            
-            analysisData.manager_action_plan = analysisData.manager_action_plan || mockAnalysis.manager_action_plan;
-            analysisData.business_impact = analysisData.business_impact || mockAnalysis.business_impact;
-            analysisData.follow_up_schedule = analysisData.follow_up_schedule || mockAnalysis.follow_up_schedule;
-            analysisData.behavioral_analysis = analysisData.behavioral_analysis || mockAnalysis.behavioral_analysis;
-            analysisData.competency_scores = analysisData.competency_scores || mockAnalysis.competency_scores;
-            
-            console.log('✅ Son analiz mock ile tamamlandı');
-        }
+        // Debug: Son analiz verisi tam içerik
+        console.log('📊 Son analiz verisi (ilk 2000 karakter):', JSON.stringify(analysisData, null, 2).substring(0, 2000));
 
         // Personel bilgilerini ekle - SUPABASE UYUMLU
         let personnelInfo;
@@ -3689,19 +3678,8 @@ app.get('/api/hr-analysis/:reportId', authenticateToken, async (req, res) => {
             console.log('❌ Executive summary yok! Tüm veri:', JSON.stringify(analysisData, null, 2));
         }
 
-        // Eğer manager_action_plan yoksa mock ile tamamla
-        if (!analysisData.manager_action_plan || !analysisData.business_impact) {
-            console.log('🔧 Eksik veri tespit edildi, mock ile tamamlanıyor...');
-            const mockAnalysis = generateMockHRAnalysis({ personnelInfo: {}, notes: [], performanceScores: [] });
-            
-            analysisData.manager_action_plan = analysisData.manager_action_plan || mockAnalysis.manager_action_plan;
-            analysisData.business_impact = analysisData.business_impact || mockAnalysis.business_impact;
-            analysisData.follow_up_schedule = analysisData.follow_up_schedule || mockAnalysis.follow_up_schedule;
-            analysisData.behavioral_analysis = analysisData.behavioral_analysis || mockAnalysis.behavioral_analysis;
-            analysisData.competency_scores = analysisData.competency_scores || mockAnalysis.competency_scores;
-            
-            console.log('✅ Mock ile tamamlandı');
-        }
+        // Debug: Analiz verisinin tam içeriğini logla
+        console.log('📊 Analiz verisi tam içerik (ilk 2000 karakter):', JSON.stringify(analysisData, null, 2).substring(0, 2000));
 
         // Metadata'dan veri al (eğer varsa)
         const metadata = analysisData._metadata || {};

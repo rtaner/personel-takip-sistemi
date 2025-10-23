@@ -2455,10 +2455,10 @@ app.get('/api/personel/:id/export/:format', authenticateToken, filterByOrganizat
 
 
         // Notları al
-        const notes = await dbOperations.getPersonelNotes(personnelId, req.organizationId);
+        const notes = await dbOperations.getNotesByPersonelId(personnelId);
 
         // Görevleri al
-        const tasks = await dbOperations.getPersonelTasks(personnelId, req.organizationId);
+        const tasks = await dbOperations.getTasksByPersonelId(personnelId);
 
         if (format === 'excel') {
             // Excel formatında export
@@ -2671,15 +2671,8 @@ app.get('/api/personel/:id/export/:format', authenticateToken, filterByOrganizat
         }
 
     } catch (error) {
-        console.error('Export hatası:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-            personnelId: personnelId,
-            format: format
-        });
-        res.status(500).json({ error: 'Rapor oluşturulurken hata oluştu: ' + error.message });
+        console.error('Export hatası:', error);
+        res.status(500).json({ error: 'Rapor oluşturulurken hata oluştu' });
     }
 });
 
@@ -2835,41 +2828,8 @@ app.get('/api/personel', authenticateToken, filterByOrganization, async (req, re
             // Personel sadece kendini görebilir
             personel = personel.filter(p => p.created_by === req.user.id);
         } else if (req.user.role === 'yonetici') {
-            // Yönetici kendini, diğer yöneticileri ve personelleri görebilir (organizasyon sahibini görmez)
-            // Önce personellerin rollerini alalım
-            const createdByIds = [...new Set(personel.map(p => p.created_by).filter(Boolean))];
-
-            if (createdByIds.length > 0) {
-                const userRoles = await new Promise((resolve, reject) => {
-                    if (useSupabase) {
-                        resolve({}); // Şimdilik boş
-                    } else {
-                        const placeholders = createdByIds.map(() => '?').join(',');
-                        db.all(
-                            `SELECT id, role FROM users WHERE id IN (${placeholders})`,
-                            createdByIds,
-                            (err, rows) => {
-                                if (err) reject(err);
-                                else {
-                                    const roleMap = {};
-                                    rows.forEach(row => {
-                                        roleMap[row.id] = row.role;
-                                    });
-                                    resolve(roleMap);
-                                }
-                            }
-                        );
-                    }
-                });
-
-                // Kendini, yöneticileri, personelleri ve organizasyon sahibinin eklediği personelleri göster
-                personel = personel.filter(p =>
-                    p.created_by === req.user.id || // Kendisi
-                    userRoles[p.created_by] === 'yonetici' || // Diğer yöneticiler
-                    userRoles[p.created_by] === 'personel' || // Personeller
-                    userRoles[p.created_by] === 'organizasyon_sahibi' // Organizasyon sahibinin eklediği personeller
-                );
-            }
+            // Yönetici tüm personelleri görebilir (kendisi ve astları)
+            // Filtreleme yapmıyoruz, tüm personelleri gösterebilir
         }
         // Organizasyon sahibi herkesi görebilir
 
@@ -2930,41 +2890,8 @@ app.get('/api/personel/:id/notlar', authenticateToken, filterByOrganization, asy
             // Personel sadece kendi oluşturduğu notları görebilir
             notlar = notlar.filter(not => not.created_by === req.user.id);
         } else if (req.user.role === 'yonetici') {
-            // Yönetici kendi notlarını ve personel notlarını görebilir (diğer yöneticilerin ve org sahibinin notlarını görmez)
-            // Önce not oluşturanların rollerini alalım
-            const createdByIds = [...new Set(notlar.map(not => not.created_by).filter(Boolean))];
-
-            if (createdByIds.length > 0) {
-                const userRoles = await new Promise((resolve, reject) => {
-                    if (useSupabase) {
-                        // Supabase için
-                        resolve({}); // Şimdilik boş, gerekirse implement edilir
-                    } else {
-                        // SQLite için
-                        const placeholders = createdByIds.map(() => '?').join(',');
-                        db.all(
-                            `SELECT id, role FROM users WHERE id IN (${placeholders})`,
-                            createdByIds,
-                            (err, rows) => {
-                                if (err) reject(err);
-                                else {
-                                    const roleMap = {};
-                                    rows.forEach(row => {
-                                        roleMap[row.id] = row.role;
-                                    });
-                                    resolve(roleMap);
-                                }
-                            }
-                        );
-                    }
-                });
-
-                // Sadece kendi notlarını ve personel notlarını filtrele (diğer yöneticilerin notlarını görmez)
-                notlar = notlar.filter(not =>
-                    not.created_by === req.user.id || // Kendi notları
-                    (userRoles[not.created_by] === 'personel') // Sadece personel notları
-                );
-            }
+            // Yönetici sadece kendi yazdığı notları görebilir
+            notlar = notlar.filter(not => not.created_by === req.user.id);
         }
         // Organizasyon sahibi tüm notları görebilir
 
@@ -3727,72 +3654,35 @@ app.get('/api/personel/:id/hr-analysis-pdf', authenticateToken, filterByOrganiza
     try {
         const personnelId = req.params.id;
 
-        // Son analiz raporunu getir - SUPABASE UYUMLU
-        let lastReport;
-        if (useSupabase) {
-            const { data, error } = await supabase
-                .from('hr_analysis_reports')
-                .select(`
-                    *,
-                    personel!personel_id(ad, soyad)
-                `)
-                .eq('personel_id', personnelId)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-                
-            if (error) throw error;
-            
-            if (data) {
-                lastReport = {
-                    ...data,
-                    personel_adi: `${data.personel.ad} ${data.personel.soyad}`
-                };
-            }
-        } else {
-            // SQLite fallback
-            lastReport = await new Promise((resolve, reject) => {
-                db.get(`
-                    SELECT har.*, p.ad || ' ' || p.soyad as personel_adi
-                    FROM hr_analysis_reports har
-                    JOIN personel p ON har.personel_id = p.id
-                    WHERE har.personel_id = ?
-                    ORDER BY har.created_at DESC
-                    LIMIT 1
-                `, [personnelId], (err, row) => {
-                    if (err) reject(err);
-                    else resolve(row);
-                });
+        // Son analiz raporunu getir
+        const lastReport = await new Promise((resolve, reject) => {
+            db.get(`
+                SELECT har.*, p.ad || ' ' || p.soyad as personel_adi
+                FROM hr_analysis_reports har
+                JOIN personel p ON har.personel_id = p.id
+                WHERE har.personel_id = ?
+                ORDER BY har.created_at DESC
+                LIMIT 1
+            `, [personnelId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
             });
-        }
+        });
 
         if (!lastReport) {
             return res.status(404).json({ error: 'Analiz raporu bulunamadı' });
         }
 
         // Analiz verisini parse et
-        const analysisData = useSupabase ? lastReport.analysis_data : JSON.parse(lastReport.analysis_data);
+        const analysisData = JSON.parse(lastReport.analysis_data);
 
-        // Personel bilgilerini al - SUPABASE UYUMLU
-        let personnelInfo;
-        if (useSupabase) {
-            const { data, error } = await supabase
-                .from('personel')
-                .select('*')
-                .eq('id', personnelId)
-                .maybeSingle();
-                
-            if (error) throw error;
-            personnelInfo = data;
-        } else {
-            // SQLite fallback
-            personnelInfo = await new Promise((resolve, reject) => {
-                db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err, row) => {
-                    if (err) reject(err);
-                    else resolve(row);
-                });
+        // Personel bilgilerini al
+        const personnelInfo = await new Promise((resolve, reject) => {
+            db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
             });
-        }
+        });
 
         // HTML içeriği oluştur
         const htmlContent = generatePDFHTML(personnelInfo, analysisData, lastReport.created_at);
@@ -3804,14 +3694,8 @@ app.get('/api/personel/:id/hr-analysis-pdf', authenticateToken, filterByOrganiza
         res.send(htmlContent);
 
     } catch (error) {
-        console.error('PDF oluşturma hatası:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-            personnelId: personnelId
-        });
-        res.status(500).json({ error: 'PDF oluşturulurken hata oluştu: ' + error.message });
+        console.error('PDF oluşturma hatası:', error);
+        res.status(500).json({ error: 'PDF oluşturulurken hata oluştu' });
     }
 });
 

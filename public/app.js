@@ -1267,11 +1267,27 @@ async function loadMyWork() {
                             ` : ''}
                         </div>
                         <div class="task-actions">
-                            <select onchange="updateMyTaskStatus(${task.id}, this.value)" class="task-status-select">
-                                <option value="beklemede" ${task.durum === 'beklemede' ? 'selected' : ''}>Beklemede</option>
-                                <option value="devam-ediyor" ${task.durum === 'devam-ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-                                <option value="tamamlandi" ${task.durum === 'tamamlandi' ? 'selected' : ''}>Tamamlandı</option>
-                            </select>
+                            ${task.durum === 'beklemede' ? `
+                                <button class="btn btn-info btn-sm" onclick="updateMyTaskStatus(${task.id}, 'devam-ediyor')">
+                                    <i class="fas fa-play"></i> Başla
+                                </button>
+                            ` : ''}
+                            ${task.durum === 'devam-ediyor' ? `
+                                ${['organizasyon_sahibi', 'yonetici'].includes(userInfo.role) ? `
+                                    <button class="btn btn-success btn-sm" onclick="openTaskCompletionModal(${task.id}, '${task.gorev_baslik}')">
+                                        <i class="fas fa-check"></i> Tamamla
+                                    </button>
+                                ` : `
+                                    <span class="task-status-info">
+                                        <i class="fas fa-clock"></i> Devam ediyor...
+                                    </span>
+                                `}
+                            ` : ''}
+                            ${task.durum === 'tamamlandi' ? `
+                                <span class="task-completed-badge">
+                                    <i class="fas fa-check-circle"></i> Tamamlandı
+                                </span>
+                            ` : ''}
                         </div>
                     `;
 
@@ -1311,6 +1327,117 @@ async function updateMyTaskStatus(taskId, newStatus) {
         console.error('Görev durumu güncellenirken hata:', error);
         alert('Bir hata oluştu!');
     }
+}
+
+// Görev tamamlama modalını aç
+function openTaskCompletionModal(taskId, taskTitle) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content task-completion-modal">
+            <h3><i class="fas fa-star"></i> Görev Tamamlama</h3>
+            <div class="task-completion-info">
+                <p><strong>Görev:</strong> ${taskTitle}</p>
+                <p>Bu görevi tamamlamak için performans puanı verin:</p>
+            </div>
+            
+            <div class="performance-rating-section">
+                <label class="performance-label">Performans Puanı:</label>
+                <div class="star-rating-completion">
+                    <div class="stars-completion" id="completion-stars">
+                        ${[1, 2, 3, 4, 5].map(i => `
+                            <span class="star-completion" data-rating="${i}" onclick="setCompletionRating(${i})">
+                                <i class="fas fa-star"></i>
+                            </span>
+                        `).join('')}
+                    </div>
+                    <span id="completion-rating-text" class="rating-text">Puan seçin</span>
+                </div>
+            </div>
+            
+            <div class="completion-actions">
+                <button class="btn btn-success" onclick="completeTaskWithRating(${taskId})" id="complete-task-btn" disabled>
+                    <i class="fas fa-check"></i> Tamamla
+                </button>
+                <button class="btn btn-secondary" onclick="closeTaskCompletionModal()">
+                    <i class="fas fa-times"></i> İptal
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Modal dışına tıklanınca kapat
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeTaskCompletionModal();
+        }
+    });
+}
+
+// Tamamlama puanını ayarla
+let completionRating = 0;
+
+function setCompletionRating(rating) {
+    completionRating = rating;
+    
+    // Yıldızları güncelle
+    const stars = document.querySelectorAll('.star-completion');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('filled');
+        } else {
+            star.classList.remove('filled');
+        }
+    });
+    
+    // Puan metnini güncelle
+    const ratingTexts = ['', 'Çok Kötü', 'Kötü', 'Orta', 'İyi', 'Mükemmel'];
+    document.getElementById('completion-rating-text').textContent = `${rating}/5 - ${ratingTexts[rating]}`;
+    
+    // Tamamla butonunu aktif et
+    document.getElementById('complete-task-btn').disabled = false;
+}
+
+// Görevi puanla ve tamamla
+async function completeTaskWithRating(taskId) {
+    if (completionRating === 0) {
+        alert('Lütfen bir performans puanı seçin!');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/gorevler/${taskId}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ 
+                durum: 'tamamlandi',
+                performans_puani: completionRating
+            })
+        });
+
+        if (response.ok) {
+            closeTaskCompletionModal();
+            loadMyWork(); // Sayfayı yenile
+            showNotification('Görev başarıyla tamamlandı!', 'success');
+        } else {
+            const result = await response.json();
+            alert('Hata: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Görev tamamlanırken hata:', error);
+        alert('Bir hata oluştu!');
+    }
+}
+
+// Tamamlama modalını kapat
+function closeTaskCompletionModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+    completionRating = 0;
 }
 
 // Dashboard widget'larını yükle (placeholder)

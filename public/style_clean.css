@@ -142,7 +142,7 @@ header p {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    margin-bottom: 5px;
     padding-bottom: 15px;
     border-bottom: 2px solid #f0f0f0;
 }
@@ -1346,7 +1346,9 @@ header p {
         width: 98%;
         margin: 10px;
     }
-}/* Bildirim
+}
+
+/* Bildirim
  sistemi */
 .notification {
     position: fixed;
@@ -1390,8 +1392,9 @@ header p {
 
 .notification span {
     flex: 1;
-}/
-* Dashboard Analiz ve Export Bölümü */
+}
+
+/* Dashboard Analiz ve Export Bölümü */
 .dashboard-section {
     background: white;
     border-radius: 12px;
@@ -1457,12 +1460,14 @@ header p {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .action-buttons-dashboard .export-buttons {
         margin-left: 0;
         justify-content: center;
     }
-}/* Ye
+}
+
+/* Ye
 ni Dashboard Stilleri */
 .dashboard-grid {
     display: grid;
@@ -1672,23 +1677,25 @@ ni Dashboard Stilleri */
         grid-template-columns: 1fr;
         padding: 10px 0;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .settings-buttons {
         align-items: stretch;
     }
-    
+
     .analysis-buttons {
         flex-direction: column;
     }
-    
+
     .code-container {
         flex-direction: column;
     }
-}/* Dash
+}
+
+/* Dash
 board Buton Stilleri */
 .dashboard-buttons {
     display: grid;
@@ -1811,22 +1818,24 @@ board Buton Stilleri */
         grid-template-columns: 1fr;
         gap: 15px;
     }
-    
+
     .dashboard-btn {
         min-height: 100px;
         padding: 15px;
     }
-    
+
     .dashboard-btn i {
         font-size: 28px;
     }
-    
+
     .section-header {
         flex-direction: column;
         gap: 10px;
         text-align: center;
     }
-}/* Org
+}
+
+/* Org
 anizasyon Yönetimi Stilleri */
 .role-badge {
     padding: 4px 8px;
@@ -1959,11 +1968,13 @@ anizasyon Yönetimi Stilleri */
     .form-actions {
         flex-direction: column;
     }
-    
+
     .info-grid {
         grid-template-columns: 1fr;
     }
-}/*
+}
+
+/*
  Dashboard Bölüm Sistemi */
 .dashboard-section {
     display: none;
@@ -2023,11 +2034,13 @@ anizasyon Yönetimi Stilleri */
         gap: 10px;
         text-align: center;
     }
-    
+
     .dashboard-section .section-header h3 {
         justify-content: center;
     }
-}/* Davet Kod
+}
+
+/* Davet Kod
 u Butonları */
 .invite-actions {
     display: flex;
@@ -2045,11 +2058,13 @@ u Butonları */
     .invite-actions {
         flex-direction: column;
     }
-    
+
     .invite-actions .btn {
         max-width: none;
     }
-}/*
+}
+
+/*
  AI Analiz Bölümü */
 .ai-analysis-info {
     margin-bottom: 30px;
@@ -2150,15 +2165,17 @@ u Butonları */
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .btn-lg {
         min-width: auto;
     }
-    
+
     .analysis-features {
         grid-template-columns: 1fr;
     }
-}/*
+}
+
+/*
  Modern Davet Kodu Tasarımı */
 .invite-section-modern {
     text-align: center;
@@ -2298,22 +2315,24 @@ u Butonları */
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .btn-copy-modern,
     .btn-generate-modern {
         min-width: auto;
     }
-    
+
     .code-display {
         font-size: 36px;
         letter-spacing: 4px;
     }
-    
+
     .invite-code-box {
         padding: 30px 15px;
         min-height: 100px;
     }
-}/* Kulla
+}
+
+/* Kulla
 nıcı Yönetimi Stilleri */
 .user-management-grid {
     display: grid;
@@ -2596,4 +2615,157 @@ nıcı Yönetimi Stilleri */
 .btn-modal-cancel {
     background: #f0f0f0;
     color: #666;
+}
+
+/* Görev
+ Tamamlama Modal Stilleri */
+.task-completion-modal {
+    max-width: 500px;
+    width: 90%;
+}
+
+.task-completion-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.task-completion-info p {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.task-completion-info p:last-child {
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+.performance-rating-section {
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.performance-label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.star-rating-completion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.stars-completion {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.star-completion {
+    font-size: 32px;
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.star-completion:hover {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.star-completion.filled {
+    color: #ffc107;
+}
+
+.rating-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    min-height: 20px;
+}
+
+.completion-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.completion-actions .btn {
+    min-width: 120px;
+    padding: 12px 20px;
+}
+
+/* Görev Aksiyon Butonları */
+.task-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 15px;
+}
+
+.task-actions .btn-sm {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+}
+
+.task-status-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #17a2b8;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    background: #e7f3ff;
+    border-radius: 6px;
+}
+
+.task-completed-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #28a745;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    background: #d4edda;
+    border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .task-completion-modal {
+        width: 95%;
+        margin: 20px;
+    }
+
+    .stars-completion {
+        gap: 6px;
+    }
+
+    .star-completion {
+        font-size: 28px;
+    }
+
+    .completion-actions {
+        flex-direction: column;
+    }
+
+    .completion-actions .btn {
+        width: 100%;
+    }
+
+    .task-actions {
+        justify-content: center;
+    }
 }

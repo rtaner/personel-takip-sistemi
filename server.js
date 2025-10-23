@@ -2455,10 +2455,10 @@ app.get('/api/personel/:id/export/:format', authenticateToken, filterByOrganizat
 
 
         // Notları al
-        const notes = await dbOperations.getNotesByPersonelId(personnelId);
+        const notes = await dbOperations.getPersonelNotes(personnelId, req.organizationId);
 
         // Görevleri al
-        const tasks = await dbOperations.getTasksByPersonelId(personnelId);
+        const tasks = await dbOperations.getPersonelTasks(personnelId, req.organizationId);
 
         if (format === 'excel') {
             // Excel formatında export
@@ -2671,8 +2671,15 @@ app.get('/api/personel/:id/export/:format', authenticateToken, filterByOrganizat
         }
 
     } catch (error) {
-        console.error('Export hatası:', error);
-        res.status(500).json({ error: 'Rapor oluşturulurken hata oluştu' });
+        console.error('Export hatası:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            personnelId: personnelId,
+            format: format
+        });
+        res.status(500).json({ error: 'Rapor oluşturulurken hata oluştu: ' + error.message });
     }
 });
 
@@ -3720,35 +3727,72 @@ app.get('/api/personel/:id/hr-analysis-pdf', authenticateToken, filterByOrganiza
     try {
         const personnelId = req.params.id;
 
-        // Son analiz raporunu getir
-        const lastReport = await new Promise((resolve, reject) => {
-            db.get(`
-                SELECT har.*, p.ad || ' ' || p.soyad as personel_adi
-                FROM hr_analysis_reports har
-                JOIN personel p ON har.personel_id = p.id
-                WHERE har.personel_id = ?
-                ORDER BY har.created_at DESC
-                LIMIT 1
-            `, [personnelId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+        // Son analiz raporunu getir - SUPABASE UYUMLU
+        let lastReport;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('hr_analysis_reports')
+                .select(`
+                    *,
+                    personel!personel_id(ad, soyad)
+                `)
+                .eq('personel_id', personnelId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+                
+            if (error) throw error;
+            
+            if (data) {
+                lastReport = {
+                    ...data,
+                    personel_adi: `${data.personel.ad} ${data.personel.soyad}`
+                };
+            }
+        } else {
+            // SQLite fallback
+            lastReport = await new Promise((resolve, reject) => {
+                db.get(`
+                    SELECT har.*, p.ad || ' ' || p.soyad as personel_adi
+                    FROM hr_analysis_reports har
+                    JOIN personel p ON har.personel_id = p.id
+                    WHERE har.personel_id = ?
+                    ORDER BY har.created_at DESC
+                    LIMIT 1
+                `, [personnelId], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
             });
-        });
+        }
 
         if (!lastReport) {
             return res.status(404).json({ error: 'Analiz raporu bulunamadı' });
         }
 
         // Analiz verisini parse et
-        const analysisData = JSON.parse(lastReport.analysis_data);
+        const analysisData = useSupabase ? lastReport.analysis_data : JSON.parse(lastReport.analysis_data);
 
-        // Personel bilgilerini al
-        const personnelInfo = await new Promise((resolve, reject) => {
-            db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+        // Personel bilgilerini al - SUPABASE UYUMLU
+        let personnelInfo;
+        if (useSupabase) {
+            const { data, error } = await supabase
+                .from('personel')
+                .select('*')
+                .eq('id', personnelId)
+                .maybeSingle();
+                
+            if (error) throw error;
+            personnelInfo = data;
+        } else {
+            // SQLite fallback
+            personnelInfo = await new Promise((resolve, reject) => {
+                db.get(`SELECT * FROM personel WHERE id = ?`, [personnelId], (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
             });
-        });
+        }
 
         // HTML içeriği oluştur
         const htmlContent = generatePDFHTML(personnelInfo, analysisData, lastReport.created_at);
@@ -3760,8 +3804,14 @@ app.get('/api/personel/:id/hr-analysis-pdf', authenticateToken, filterByOrganiza
         res.send(htmlContent);
 
     } catch (error) {
-        console.error('PDF oluşturma hatası:', error);
-        res.status(500).json({ error: 'PDF oluşturulurken hata oluştu' });
+        console.error('PDF oluşturma hatası:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            personnelId: personnelId
+        });
+        res.status(500).json({ error: 'PDF oluşturulurken hata oluştu: ' + error.message });
     }
 });
 

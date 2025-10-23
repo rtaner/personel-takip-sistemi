@@ -1406,6 +1406,18 @@ function showHRAnalysisModal(analysisResult) {
     // Debug: Sadece önemli bilgileri logla
     console.log('✅ İK Analizi görüntüleniyor');
 
+    // Önce hr_analysis'i parse et
+    let hr_analysis = analysisResult.hr_analysis || {};
+    if (typeof hr_analysis === 'string') {
+        try {
+            hr_analysis = JSON.parse(hr_analysis);
+            console.log('✅ HR Analysis JSON parse edildi');
+        } catch (error) {
+            console.error('❌ HR Analysis JSON parse hatası:', error);
+            hr_analysis = {};
+        }
+    }
+
     // Veri yapısını normalize et
     const personnel_info = analysisResult.personnel_info || {};
 
@@ -1421,17 +1433,6 @@ function showHRAnalysisModal(analysisResult) {
     // Personnel info'yu metadata'dan güncelle
     if (metadata.personnel_info) {
         personnel_info.organization = metadata.personnel_info.organization || personnel_info.organization;
-    }
-    // hr_analysis string ise parse et
-    let hr_analysis = analysisResult.hr_analysis || {};
-    if (typeof hr_analysis === 'string') {
-        try {
-            hr_analysis = JSON.parse(hr_analysis);
-            console.log('✅ HR Analysis JSON parse edildi');
-        } catch (error) {
-            console.error('❌ HR Analysis JSON parse hatası:', error);
-            hr_analysis = {};
-        }
     }
     const executive_summary = hr_analysis.executive_summary || {
         overall_risk_level: 'low',

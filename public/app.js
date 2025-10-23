@@ -188,7 +188,7 @@ async function loadPersonel() {
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="menu-dropdown" id="menu-${p.id}">
-                        <button class="menu-item edit" onclick="editPersonel(${p.id}, '${p.ad}', '${p.soyad}', '${p.pozisyon || ''}')">
+                        <button class="menu-item edit" onclick="editPersonel(${p.id}, '${(p.ad || '').replace(/'/g, "\\'")}', '${(p.soyad || '').replace(/'/g, "\\'")}', '${(p.pozisyon || '').replace(/'/g, "\\'")}')">
                             <i class="fas fa-edit"></i> Düzenle
                         </button>
                         ${userInfo.role === 'organizasyon_sahibi' ? `
@@ -261,10 +261,7 @@ function showPersonelForm() {
     document.getElementById('personel-form').style.display = 'block';
 }
 
-function hidePersonelForm() {
-    document.getElementById('personel-form').style.display = 'none';
-    document.getElementById('personel-form').querySelector('form').reset();
-}
+// hidePersonelForm fonksiyonu aşağıda tanımlı
 
 // Yeni personel ekleme
 async function addPersonel(event) {
@@ -695,9 +692,7 @@ function toggleCardMenu(event, personelId) {
     // Menu toggle logic
 }
 
-function editPersonel(id, ad, soyad, pozisyon) {
-    // Edit personel logic
-}
+// editPersonel fonksiyonu aşağıda tanımlı
 
 function deletePersonel(id, name) {
     // Delete personel logic
@@ -853,15 +848,22 @@ async function performDeletePersonel(personelId) {
 
 // Form iptal edildiğinde orijinal fonksiyonu geri yükle
 function hidePersonelForm() {
-    document.getElementById('personel-form').style.display = 'none';
+    const form = document.getElementById('personel-form');
+    
+    // Formu gizle
+    form.style.display = 'none';
 
     // Form başlığını sıfırla
-    const form = document.getElementById('personel-form');
     const formTitle = form.querySelector('h3');
     formTitle.textContent = 'Yeni Personel Ekle';
 
-    // Form alanlarını temizle
-    document.getElementById('personel-form').querySelector('form').reset();
+    // Form alanlarını manuel olarak temizle
+    document.getElementById('ad').value = '';
+    document.getElementById('soyad').value = '';
+    document.getElementById('pozisyon').value = '';
+
+    // Form reset de çağır
+    form.querySelector('form').reset();
 
     // Form submit fonksiyonunu orijinal haline getir
     const formElement = form.querySelector('form');

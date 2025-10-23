@@ -2870,7 +2870,7 @@ app.put('/api/personel/:id', authenticateToken, filterByOrganization, requireRol
 });
 
 // Personel silme
-app.delete('/api/personel/:id', authenticateToken, filterByOrganization, requireRole(['organizasyon_sahibi', 'yonetici']), async (req, res) => {
+app.delete('/api/personel/:id', authenticateToken, filterByOrganization, requireRole(['organizasyon_sahibi']), async (req, res) => {
     try {
         await dbOperations.deletePersonel(req.params.id, req.organizationId);
         res.json({ message: 'Personel başarıyla silindi' });

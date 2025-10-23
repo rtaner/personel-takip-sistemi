@@ -462,24 +462,20 @@ async function loadActivities(personelId) {
                         ${activity.endDate ? `<p><strong>Bitiş Tarihi:</strong> ${formatDate(activity.endDate)}</p>` : ''}
                         
                         <div class="task-actions" style="margin-top: 15px;">
-                            <select onchange="updateTaskStatus(${activity.id}, this.value)" style="margin-right: 10px;">
-                                <option value="beklemede" ${activity.status === 'beklemede' ? 'selected' : ''}>Beklemede</option>
-                                <option value="devam-ediyor" ${activity.status === 'devam-ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-                                <option value="tamamlandi" ${activity.status === 'tamamlandi' ? 'selected' : ''}>Tamamlandı</option>
-                            </select>
-                            
-                            ${activity.status === 'tamamlandi' ? `
-                                <div class="star-rating">
-                                    <div class="star-rating-row">
-                                        <span>Performans Değerlendirmesi:</span>
-                                    </div>
-                                    <div class="stars">
-                                        ${[1, 2, 3, 4, 5].map(i => `
-                                            <span class="star ${activity.performance >= i ? 'filled' : ''}"
-                                                   onclick="updatePerformance(${activity.id}, ${i})">★</span>
-                                        `).join('')}
-                                    </div>
-                                </div>
+                            ${activity.status === 'beklemede' ? `
+                                ${['organizasyon_sahibi', 'yonetici'].includes(userInfo.role) ? `
+                                    <button class="btn btn-success btn-sm" onclick="openTaskCompletionModal(${activity.id}, '${activity.content.replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-check"></i> Tamamla
+                                    </button>
+                                ` : `
+                                    <span class="task-status-badge status-beklemede">
+                                        <i class="fas fa-clock"></i> Beklemede
+                                    </span>
+                                `}
+                            ` : activity.status === 'tamamlandi' ? `
+                                <span class="task-completed-badge">
+                                    <i class="fas fa-check-circle"></i> Tamamlandı
+                                </span>
                             ` : ''}
                         </div>
                     `;
@@ -1107,7 +1103,8 @@ function closeModal() {
     }
 }
 
-// Görev durumu güncelleme
+// Eski görev durumu güncelleme fonksiyonları (artık kullanılmıyor)
+/*
 async function updateTaskStatus(gorevId, durum) {
     try {
         const response = await fetch(`/api/gorevler/${gorevId}`, {
@@ -1128,7 +1125,6 @@ async function updateTaskStatus(gorevId, durum) {
     }
 }
 
-// Performans puanı güncelleme
 async function updatePerformance(gorevId, puan) {
     try {
         const response = await fetch(`/api/gorevler/${gorevId}`, {
@@ -1136,7 +1132,7 @@ async function updatePerformance(gorevId, puan) {
             headers: getAuthHeaders(),
             body: JSON.stringify({
                 performans_puani: puan,
-                durum: 'tamamlandi' // Durumu da koruyalım
+                durum: 'tamamlandi'
             })
         });
 
@@ -1151,6 +1147,7 @@ async function updatePerformance(gorevId, puan) {
         alert('Bir hata oluştu!');
     }
 }
+*/
 
 // Sekme değiştirme
 function showTab(tabName) {
@@ -1268,22 +1265,16 @@ async function loadMyWork() {
                         </div>
                         <div class="task-actions">
                             ${task.durum === 'beklemede' ? `
-                                <button class="btn btn-info btn-sm" onclick="updateMyTaskStatus(${task.id}, 'devam-ediyor')">
-                                    <i class="fas fa-play"></i> Başla
-                                </button>
-                            ` : ''}
-                            ${task.durum === 'devam-ediyor' ? `
                                 ${['organizasyon_sahibi', 'yonetici'].includes(userInfo.role) ? `
                                     <button class="btn btn-success btn-sm" onclick="openTaskCompletionModal(${task.id}, '${task.gorev_baslik}')">
                                         <i class="fas fa-check"></i> Tamamla
                                     </button>
                                 ` : `
-                                    <span class="task-status-info">
-                                        <i class="fas fa-clock"></i> Devam ediyor...
+                                    <span class="task-status-badge status-beklemede">
+                                        <i class="fas fa-clock"></i> Beklemede
                                     </span>
                                 `}
-                            ` : ''}
-                            ${task.durum === 'tamamlandi' ? `
+                            ` : task.durum === 'tamamlandi' ? `
                                 <span class="task-completed-badge">
                                     <i class="fas fa-check-circle"></i> Tamamlandı
                                 </span>
@@ -1419,7 +1410,12 @@ async function completeTaskWithRating(taskId) {
 
         if (response.ok) {
             closeTaskCompletionModal();
-            loadMyWork(); // Sayfayı yenile
+            // Hangi sayfada olduğumuza göre yenile
+            if (typeof loadMyWork === 'function' && document.getElementById('my-work-tab').classList.contains('active')) {
+                loadMyWork(); // İşlerim sayfasında
+            } else if (typeof loadActivities === 'function' && currentPersonelId) {
+                loadActivities(currentPersonelId); // Personel detay sayfasında
+            }
             showNotification('Görev başarıyla tamamlandı!', 'success');
         } else {
             const result = await response.json();

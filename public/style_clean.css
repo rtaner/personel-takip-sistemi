@@ -2768,4 +2768,20 @@ nıcı Yönetimi Stilleri */
     .task-actions {
         justify-content: center;
     }
+}/* 
+Beklemede Durumu Rozeti */
+.task-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.task-status-badge.status-beklemede {
+    color: #856404;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
 }

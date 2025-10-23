@@ -191,9 +191,11 @@ async function loadPersonel() {
                         <button class="menu-item edit" onclick="editPersonel(${p.id}, '${p.ad}', '${p.soyad}', '${p.pozisyon || ''}')">
                             <i class="fas fa-edit"></i> Düzenle
                         </button>
-                        <button class="menu-item delete" onclick="deletePersonel(${p.id}, '${p.ad} ${p.soyad}')">
-                            <i class="fas fa-trash"></i> Sil
-                        </button>
+                        ${userInfo.role === 'organizasyon_sahibi' ? `
+                            <button class="menu-item delete" onclick="deletePersonel(${p.id}, '${p.ad} ${p.soyad}')">
+                                <i class="fas fa-trash"></i> Sil
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -384,9 +386,11 @@ async function loadActivities(personelId) {
                                     <button class="menu-item edit" onclick="editNote(${activity.id}, '${activity.content.replace(/'/g, "\\'")}', '${activity.noteType}')">
                                         <i class="fas fa-edit"></i> Düzenle
                                     </button>
-                                    <button class="menu-item delete" onclick="deleteNote(${activity.id})">
-                                        <i class="fas fa-trash"></i> Sil
-                                    </button>
+                                    ${userInfo.role === 'organizasyon_sahibi' ? `
+                                        <button class="menu-item delete" onclick="deleteNote(${activity.id})">
+                                            <i class="fas fa-trash"></i> Sil
+                                        </button>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>

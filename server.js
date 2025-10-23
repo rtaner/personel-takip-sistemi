@@ -2958,9 +2958,32 @@ app.get('/api/personel/:id/gorevler', authenticateToken, filterByOrganization, a
 app.get('/api/my-tasks', authenticateToken, filterByOrganization, async (req, res) => {
     try {
         // Kullanıcının atandığı görevleri getir
-        const tasks = await new Promise((resolve, reject) => {
+        const tasks = await new Promise(async (resolve, reject) => {
             if (useSupabase) {
-                resolve([]); // Şimdilik boş
+                try {
+                    const { data, error } = await supabase
+                        .from('gorevler')
+                        .select(`
+                            *,
+                            personel!inner(ad, soyad)
+                        `)
+                        .eq('assigned_to', req.user.id)
+                        .eq('organization_id', req.organizationId)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+                    
+                    // Supabase sonucunu SQLite formatına dönüştür
+                    const formattedTasks = data.map(task => ({
+                        ...task,
+                        ad: task.personel?.ad,
+                        soyad: task.personel?.soyad
+                    }));
+                    
+                    resolve(formattedTasks);
+                } catch (error) {
+                    reject(error);
+                }
             } else {
                 db.all(
                     `SELECT g.*, p.ad, p.soyad 

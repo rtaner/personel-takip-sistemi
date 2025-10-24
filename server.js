@@ -5,9 +5,10 @@ const bodyParser = require('body-parser');
 const path = require('path');
 
 // Import modüler yapı
-const jwt = require('jsonwebtoken'); // authenticateToken için gerekli
 const { generateToken, hashPassword, verifyPassword, generateInviteCode } = require('./utils/auth');
 const { supabase, useSupabase, db } = require('./config/database');
+const { authenticateToken, requireRole, filterByOrganization } = require('./middleware/auth');
+const { validatePersonel, validateNote, validateTask, errorHandler } = require('./middleware/validation');
 
 // Environment variables kontrolü
 console.log('🔧 Environment Variables Kontrolü:');
@@ -358,49 +359,7 @@ function generateMockHRAnalysis(personnelData) {
 
 // Auth fonksiyonları utils/auth.js'e taşındı
 
-// Middleware: JWT Token Doğrulama
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-    if (!token) {
-        return res.status(401).json({ error: 'Erişim token\'ı gerekli' });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret', (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'Geçersiz token' });
-        }
-        req.user = user;
-        next();
-    });
-}
-
-// Middleware: Rol Bazlı Yetki Kontrolü
-function requireRole(roles) {
-    return (req, res, next) => {
-        if (!req.user) {
-            return res.status(401).json({ error: 'Kimlik doğrulama gerekli' });
-        }
-
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ error: 'Bu işlem için yetkiniz yok' });
-        }
-
-        next();
-    };
-}
-
-// Middleware: Organizasyon Filtreleme
-function filterByOrganization(req, res, next) {
-    if (!req.user) {
-        return res.status(401).json({ error: 'Kimlik doğrulama gerekli' });
-    }
-
-    // Kullanıcının organizasyon ID'sini req'e ekle (hem organizationId hem organization_id destekle)
-    req.organizationId = req.user.organization_id || req.user.organizationId || null;
-    next();
-}
+// Middleware'ler middleware/auth.js'e taşındı
 
 // Veritabanı işlemleri
 const dbOperations = {
@@ -3678,6 +3637,9 @@ app.get('/api/health-check', (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     });
 });
+
+// Error handling middleware (en sonda olmalı)
+app.use(errorHandler);
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server ${PORT} portunda çalışıyor`);

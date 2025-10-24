@@ -3879,6 +3879,17 @@ app.get('/api/hr-analysis-reports', authenticateToken, filterByOrganization, asy
     }
 });
 
+// Test endpoint - Refactor sırasında sistem sağlığını kontrol için
+app.get('/api/health-check', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        database: useSupabase ? 'Supabase' : 'SQLite',
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server ${PORT} portunda çalışıyor`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);

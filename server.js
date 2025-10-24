@@ -12,6 +12,9 @@ const { validatePersonel, validateNote, validateTask, errorHandler } = require('
 
 // Route imports
 const authRoutes = require('./routes/auth');
+const personelRoutes = require('./routes/personel');
+const notlarRoutes = require('./routes/notlar');
+const gorevlerRoutes = require('./routes/gorevler');
 
 // Environment variables kontrolü
 console.log('🔧 Environment Variables Kontrolü:');
@@ -1545,6 +1548,9 @@ console.log(`🔗 Supabase URL: ${process.env.SUPABASE_URL ? 'Configured ✅' : 
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/personel', personelRoutes);
+app.use('/api/notlar', notlarRoutes);
+app.use('/api/gorevler', gorevlerRoutes);
 
 // =====================================================
 // ORGANIZATION API ENDPOINTS
@@ -2361,45 +2367,9 @@ app.get('/api/organization/my-notes', authenticateToken, async (req, res) => {
 // =====================================================
 
 
-// Tüm personeli getir (organizasyon bazlı)
-app.get('/api/personel', authenticateToken, filterByOrganization, async (req, res) => {
-    try {
-        let personel = await dbOperations.getPersonel(req.organizationId);
+// Personel route'ları routes/personel.js'e taşındı
 
-        // Rol bazlı filtreleme
-        if (req.user.role === 'personel') {
-            // Personel sadece kendini görebilir
-            personel = personel.filter(p => p.created_by === req.user.id);
-        } else if (req.user.role === 'yonetici') {
-            // Yönetici tüm personelleri görebilir (kendisi ve astları)
-            // Filtreleme yapmıyoruz, tüm personelleri gösterebilir
-        }
-        // Organizasyon sahibi herkesi görebilir
-
-        res.json(personel);
-    } catch (error) {
-        console.error('Personel getirme hatası:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Yeni personel ekle
-app.post('/api/personel', authenticateToken, filterByOrganization, requireRole(['organizasyon_sahibi', 'yonetici']), async (req, res) => {
-    try {
-        // Organizasyon ve oluşturan kişi bilgilerini ekle
-        const personelData = {
-            ...req.body,
-            organization_id: req.organizationId,
-            created_by: req.user.id
-        };
-
-        const result = await dbOperations.addPersonel(personelData);
-        res.json({ id: result.id, message: 'Personel başarıyla eklendi' });
-    } catch (error) {
-        console.error('Personel ekleme hatası:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
+// Personel CRUD route'ları taşındı
 
 // Personel güncelleme
 app.put('/api/personel/:id', authenticateToken, filterByOrganization, requireRole(['organizasyon_sahibi', 'yonetici']), async (req, res) => {

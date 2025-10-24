@@ -3,9 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+
+// Import modüler yapı
+const { generateToken, hashPassword, verifyPassword, generateInviteCode } = require('./utils/auth');
+const { supabase, useSupabase, db } = require('./config/database');
 
 // Environment variables kontrolü
 console.log('🔧 Environment Variables Kontrolü:');
@@ -244,189 +245,7 @@ class SimpleAIAnalysisService {
 
 const simpleAIAnalysisService = new SimpleAIAnalysisService();
 
-// Supabase Configuration
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-let supabase = null;
-let useSupabase = false;
-
-// Supabase istemcisini oluştur
-if (process.env.USE_SUPABASE === 'true' && supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    useSupabase = true;
-    console.log('✅ Supabase bağlantısı kuruldu');
-
-    // Bağlantıyı test et
-    supabase.from('users').select('count', { count: 'exact', head: true })
-        .then(({ error }) => {
-            if (error) {
-                console.error('❌ Supabase bağlantı testi başarısız:', error.message);
-            } else {
-                console.log('✅ Supabase bağlantı testi başarılı');
-            }
-        })
-        .catch(err => {
-            console.error('❌ Supabase bağlantı testi hatası:', err.message);
-        });
-} else {
-    console.log('⚠️ Supabase bilgileri bulunamadı, SQLite kullanılacak');
-}
-
-// SQLite veritabanı (fallback)
-const dbPath = process.env.DB_PATH || 'personel_takip.db';
-const db = new sqlite3.Database(dbPath);
-
-// SQLite tablolarını oluştur
-if (!useSupabase) {
-    db.serialize(() => {
-        // Mevcut tablolar
-        db.run(`CREATE TABLE IF NOT EXISTS personel (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ad TEXT NOT NULL,
-            soyad TEXT NOT NULL,
-            pozisyon TEXT,
-            telefon TEXT,
-            email TEXT,
-            baslangic_tarihi DATE,
-            aktif BOOLEAN DEFAULT 1,
-            olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS notlar (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            personel_id INTEGER,
-            not_metni TEXT NOT NULL,
-            tarih DATETIME DEFAULT CURRENT_TIMESTAMP,
-            kategori TEXT DEFAULT 'genel',
-            FOREIGN KEY (personel_id) REFERENCES personel (id)
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS gorevler (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            personel_id INTEGER,
-            gorev_baslik TEXT NOT NULL,
-            gorev_aciklama TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            bitis_tarihi DATE,
-            durum TEXT DEFAULT 'beklemede',
-            performans_puani INTEGER,
-            FOREIGN KEY (personel_id) REFERENCES personel (id)
-        )`);
-
-        // Yeni auth tabloları
-        db.run(`CREATE TABLE IF NOT EXISTS organizations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            invite_code TEXT UNIQUE NOT NULL,
-            owner_id INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            is_active BOOLEAN DEFAULT 1
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            full_name TEXT NOT NULL,
-            organization_id INTEGER,
-            role TEXT DEFAULT 'personel' CHECK (role IN ('organizasyon_sahibi', 'yonetici', 'personel')),
-            is_active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_login DATETIME,
-            session_token TEXT,
-            session_expires_at DATETIME,
-            FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE
-        )`);
-
-        // Mevcut tablolara yeni alanlar ekle (sadece yoksa)
-        db.run(`ALTER TABLE personel ADD COLUMN organization_id INTEGER`, (err) => {
-            // Hata normal - alan zaten varsa
-        });
-        db.run(`ALTER TABLE personel ADD COLUMN created_by INTEGER`, (err) => {
-            // Hata normal - alan zaten varsa
-        });
-
-        db.run(`ALTER TABLE notlar ADD COLUMN created_by INTEGER`, (err) => {
-            // Hata normal - alan zaten varsa
-        });
-        db.run(`ALTER TABLE notlar ADD COLUMN organization_id INTEGER`, (err) => {
-            // Hata normal - alan zaten varsa
-        });
-
-        db.run(`ALTER TABLE gorevler ADD COLUMN created_by INTEGER`, (err) => {
-            // Hata normal - alan zaten varsa
-        });
-        db.run(`ALTER TABLE gorevler ADD COLUMN assigned_to INTEGER`, (err) => {
-            // Hata normal - alan zaten varsa
-        });
-
-        // Likert analizi için yeni tablolar
-        db.run(`CREATE TABLE IF NOT EXISTS competencies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT,
-            weight DECIMAL(3,2) DEFAULT 0.2,
-            is_active BOOLEAN DEFAULT 1
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS note_analysis (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            note_id INTEGER REFERENCES notlar(id),
-            competency_id INTEGER REFERENCES competencies(id),
-            likert_score INTEGER CHECK (likert_score >= 1 AND likert_score <= 5),
-            confidence_level DECIMAL(3,2),
-            analysis_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-            ai_reasoning TEXT
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS personnel_competency_summary (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            personel_id INTEGER REFERENCES personel(id),
-            competency_id INTEGER REFERENCES competencies(id),
-            current_score DECIMAL(3,2),
-            previous_score DECIMAL(3,2),
-            trend_direction TEXT CHECK (trend_direction IN ('up', 'down', 'stable')),
-            last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-            note_count INTEGER DEFAULT 0
-        )`);
-
-        // İK Analiz Raporları Tablosu
-        db.run(`CREATE TABLE IF NOT EXISTS hr_analysis_reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            personel_id INTEGER REFERENCES personel(id),
-            analysis_data TEXT NOT NULL,
-            overall_risk_level TEXT NOT NULL,
-            immediate_action_required INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            created_by INTEGER REFERENCES users(id)
-        )`);
-
-        // Varsayılan yetkinlikleri ekle
-        db.run(`INSERT OR IGNORE INTO competencies (id, name, description, weight) VALUES
-            (1, 'communication', 'İletişim Becerisi', 0.2),
-            (2, 'teamwork', 'Takım Çalışması', 0.2),
-            (3, 'problem_solving', 'Problem Çözme', 0.2),
-            (4, 'customer_focus', 'Müşteri Odaklılık', 0.2),
-            (5, 'reliability', 'Güvenilirlik', 0.2)
-        `);
-        db.run(`ALTER TABLE gorevler ADD COLUMN organization_id INTEGER`, (err) => {
-            // Hata normal - alan zaten varsa
-        });
-
-        // İndeksler
-        db.run(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
-        db.run(`CREATE INDEX IF NOT EXISTS idx_users_organization_id ON users(organization_id)`);
-        db.run(`CREATE INDEX IF NOT EXISTS idx_organizations_invite_code ON organizations(invite_code)`);
-        db.run(`CREATE INDEX IF NOT EXISTS idx_personel_organization_id ON personel(organization_id)`);
-        db.run(`CREATE INDEX IF NOT EXISTS idx_notlar_organization_id ON notlar(organization_id)`);
-        db.run(`CREATE INDEX IF NOT EXISTS idx_gorevler_organization_id ON gorevler(organization_id)`);
-
-        console.log('✅ Auth tabloları ve indeksler oluşturuldu');
-    });
-}
+// Database konfigürasyonu config/database.js'e taşındı
 
 // Mock İK Analizi (Test Amaçlı)
 function generateMockHRAnalysis(personnelData) {
@@ -534,40 +353,9 @@ function generateMockHRAnalysis(personnelData) {
     };
 }
 
-// Yardımcı fonksiyonlar
-function generateInviteCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-}
+// Yardımcı fonksiyonlar utils/auth.js'e taşındı
 
-// JWT token oluşturma
-function generateToken(user) {
-    return jwt.sign(
-        {
-            id: user.id,
-            username: user.username,
-            organizationId: user.organization_id,
-            role: user.role
-        },
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '2d' }
-    );
-}
-
-// Şifre hash'leme
-async function hashPassword(password) {
-    const saltRounds = 10;
-    return await bcrypt.hash(password, saltRounds);
-}
-
-// Şifre doğrulama
-async function verifyPassword(password, hash) {
-    return await bcrypt.compare(password, hash);
-}
+// Auth fonksiyonları utils/auth.js'e taşındı
 
 // Middleware: JWT Token Doğrulama
 function authenticateToken(req, res, next) {

@@ -15,6 +15,10 @@ const authRoutes = require('./routes/auth');
 const personelRoutes = require('./routes/personel');
 const notlarRoutes = require('./routes/notlar');
 const gorevlerRoutes = require('./routes/gorevler');
+const organizationRoutes = require('./routes/organization');
+
+// TODO: dbOperations'ı utils/database.js'e taşı (1156 satır - çok büyük)
+// Şimdilik server.js'de kalacak
 
 // Environment variables kontrolü
 console.log('🔧 Environment Variables Kontrolü:');
@@ -1551,6 +1555,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/personel', personelRoutes);
 app.use('/api/notlar', notlarRoutes);
 app.use('/api/gorevler', gorevlerRoutes);
+app.use('/api/organization', organizationRoutes);
 
 // =====================================================
 // ORGANIZATION API ENDPOINTS
@@ -1558,7 +1563,7 @@ app.use('/api/gorevler', gorevlerRoutes);
 
 // Auth route'ları routes/auth.js'e taşındı
 
-// Organizasyon üyelerini getir
+// Temel organization route'ları routes/organization.js'e taşındı
 app.get('/api/organization/members', authenticateToken, filterByOrganization, async (req, res) => {
     try {
         const members = await dbOperations.getOrganizationMembers(req.organizationId);
@@ -2485,14 +2490,14 @@ app.get('/api/my-tasks', authenticateToken, filterByOrganization, async (req, re
                         .order('created_at', { ascending: false });
 
                     if (error) throw error;
-                    
+
                     // Supabase sonucunu SQLite formatına dönüştür
                     const formattedTasks = data.map(task => ({
                         ...task,
                         ad: task.personel?.ad,
                         soyad: task.personel?.soyad
                     }));
-                    
+
                     resolve(formattedTasks);
                 } catch (error) {
                     reject(error);
@@ -2774,15 +2779,15 @@ app.get('/api/personel/:id/hr-analysis', authenticateToken, filterByOrganization
         let hrAnalysis;
         try {
             hrAnalysis = await advancedAI.analyzePersonnelComprehensive(personnelData);
-            
+
             // Debug: Gemini'den gelen veriyi logla
             console.log('🤖 Gemini API response keys:', Object.keys(hrAnalysis));
             console.log('🤖 Executive summary keys:', hrAnalysis.executive_summary ? Object.keys(hrAnalysis.executive_summary) : 'yok');
             console.log('🤖 Manager action plan keys:', hrAnalysis.manager_action_plan ? Object.keys(hrAnalysis.manager_action_plan) : 'yok');
-            
+
             // Tam veriyi logla (ilk 1000 karakter)
             console.log('🤖 Gemini tam response (ilk kısım):', JSON.stringify(hrAnalysis, null, 2).substring(0, 1000));
-            
+
             // Eğer manager_action_plan yoksa uyar ama mock kullanma
             if (!hrAnalysis.manager_action_plan || !hrAnalysis.business_impact) {
                 console.log('⚠️ Gemini API eksik veri döndürdü!');
@@ -3394,8 +3399,8 @@ app.get('/api/hr-analysis-reports', authenticateToken, filterByOrganization, asy
 
 // Test endpoint - Refactor sırasında sistem sağlığını kontrol için
 app.get('/api/health-check', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         timestamp: new Date().toISOString(),
         version: '1.0.0',
         database: useSupabase ? 'Supabase' : 'SQLite',

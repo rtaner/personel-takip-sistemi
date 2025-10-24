@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 
 // Import modüler yapı
+const jwt = require('jsonwebtoken'); // authenticateToken için gerekli
 const { generateToken, hashPassword, verifyPassword, generateInviteCode } = require('./utils/auth');
 const { supabase, useSupabase, db } = require('./config/database');
 
